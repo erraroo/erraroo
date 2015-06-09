@@ -27,6 +27,7 @@ func init() {
 	viper.SetDefault("Port", 3000)
 	viper.SetConfigName("config")
 	viper.AddConfigPath("/etc/erraroo")
+	viper.AddConfigPath("/tmp/erraroo")
 	viper.AddConfigPath("$HOME/.erraroo")
 	viper.ReadInConfig()
 

@@ -26,7 +26,7 @@ func main() {
 	a.Name = "erraroo"
 	a.Author = "Benjamin Silas Rhodes"
 	a.Email = "ben@nerdyworm.com"
-	a.Version = "0.0.2"
+	a.Version = "0.0.3"
 	a.Commands = []cli.Command{
 		cli.Command{
 			Name:        "server",
