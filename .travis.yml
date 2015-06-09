@@ -1,0 +1,34 @@
+language: go
+
+go:
+- 1.4.2
+
+addons:
+  postgresql: 9.3
+
+services:
+- postgresql
+
+install:
+- go get -d ./...
+- go get -u github.com/stretchr/testify/assert
+
+before_script:
+- scripts/ci
+
+script: go test ./...
+
+after_success:
+- go build .
+- mkdir $HOME/dist
+- mv erraroo $HOME/dist/
+
+deploy:
+  provider: s3
+  access_key_id: AKIAJ7Q7RC6F4U3CDMTA
+  secret_access_key:
+    secure: ZFBVBOQoa8DVQL10Hb0KjRRIM7Ty/tepWcaImFxsZtexY41exrSKM3WbCzK7uue9kIEoYL0G2lG0QOIRSjGxHCuAWg1hyeJlPRpYm8HtA+O0bdst8NVp2Z1Uv3DUq3XrZ8eR5ThoqecwbIK5XoJx6qX7E/kPjQP9QxkMPJ2AXrk=
+  bucket: builds.erraroo.com
+  acl: private
+  local_dir: $HOME/dist
+  upload-dir: $TRAVIS_BRANCH
