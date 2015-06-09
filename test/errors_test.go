@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/erraroo/erraroo/api/events"
 	"github.com/erraroo/erraroo/models"
 	"github.com/erraroo/erraroo/serializers"
-	"github.com/jserr/jserr/api/events"
 	"github.com/stretchr/testify/assert"
 )
 
