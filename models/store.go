@@ -9,8 +9,8 @@ import (
 
 	"go/build"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/erraroo/erraroo/config"
+	"github.com/jmoiron/sqlx"
 	"github.com/lann/squirrel"
 	_ "github.com/lib/pq"
 	"github.com/tanel/dbmigrate"
@@ -35,13 +35,14 @@ type Store struct {
 }
 
 // NewStore initializes a new Store
-func NewStore(config string) *Store {
+func NewStore(config string) (*Store, error) {
 	db, err := sqlx.Connect("postgres", config)
 	if err != nil {
-		panic(err)
+		log.Printf("[error] could not connect to postgres err=`%s`\n", err)
+		return nil, err
 	}
 
-	return &Store{db}
+	return &Store{db}, nil
 }
 
 // Close closes all the connections

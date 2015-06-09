@@ -27,11 +27,6 @@ import (
 	"github.com/rs/cors"
 )
 
-func init() {
-	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
-
-}
-
 // Context is the context that is passed into each request
 type Context struct {
 	Store *models.Store

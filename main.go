@@ -16,8 +16,17 @@ import (
 	"github.com/erraroo/erraroo/models"
 )
 
+func init() {
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+}
+
 func main() {
-	models.Setup(config.Postgres)
+	err := models.Setup(config.Postgres)
+	if err != nil {
+		log.Printf("[error] could not connect to database err=`%s`\n", err)
+		os.Exit(1)
+		return
+	}
 
 	erraroo := app.New()
 	defer erraroo.Shutdown()
