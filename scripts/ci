@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -e
+
+createdb erraroo_test
+
+mkdir $HOME/.erraroo/
+cat <<EOF > $HOME/.erraroo/config.json
+{
+  "Env":"ci",
+  "SessionAuthKey":"12345678901234567890123456789012",
+  "SessionCryptKey":"12345678901234567890123456789012"
+}
+EOF
+cat $HOME/.erraroo/config.json
