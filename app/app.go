@@ -195,6 +195,8 @@ func New() *App {
 	a.Router.Handle("/api/v1/users/{id}", a.AuthroziedHandler(showMe)).Methods("GET")
 	a.Router.Handle("/api/v1/timings", a.AuthroziedHandler(timings.Index)).Methods("GET")
 
+	a.Router.HandleFunc("/healthcheck", healthcheck).Methods("GET")
+
 	c := cors.New(cors.Options{
 		//Debug:          true,
 		AllowedOrigins: []string{"*"},
@@ -228,6 +230,10 @@ func New() *App {
 func notFoundHandler(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	http.Error(w, "not found", http.StatusNotFound)
 	return nil
+}
+
+func healthcheck(w http.ResponseWriter, r *http.Request) {
+	http.Error(w, "ok", http.StatusOK)
 }
 
 func showMe(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
