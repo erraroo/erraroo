@@ -52,17 +52,17 @@ func (s *Store) Close() {
 
 // Migrate the database to the latest version
 func (s *Store) Migrate() {
-	pkg, err := build.Default.Import("github.com/erraroo/erraroo", "", 0x0)
-	if err != nil {
-		panic(err)
-	}
-
 	path := config.MigrationsPath
 	if path == "" {
+		pkg, err := build.Default.Import("github.com/erraroo/erraroo", "", 0x0)
+		if err != nil {
+			panic(err)
+		}
+
 		path = filepath.Join(pkg.Dir, "db", "migrations")
 	}
 
-	err = dbmigrate.Run(s.DB.DB, path)
+	err := dbmigrate.Run(s.DB.DB, path)
 	if err != nil {
 		log.Fatal(err)
 	}
