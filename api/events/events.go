@@ -2,6 +2,7 @@ package events
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/erraroo/erraroo/cx"
@@ -26,6 +27,7 @@ func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	}
 
 	data := string(payload)
+	log.Println(request)
 
 	switch request.Kind {
 	case "js.error":

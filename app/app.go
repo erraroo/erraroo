@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/erraroo/erraroo/api/errors"
 	"github.com/erraroo/erraroo/api/events"
@@ -198,10 +196,11 @@ func New() *App {
 	a.Router.HandleFunc("/healthcheck", healthcheck).Methods("GET")
 
 	c := cors.New(cors.Options{
-		//Debug:          true,
+		Debug:          true,
 		AllowedOrigins: []string{"*"},
 		AllowedMethods: []string{"GET", "POST", "DELETE", "PUT"},
-		AllowedHeaders: []string{"Accept", "Authorization"},
+		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type"},
+		MaxAge:         60 * 10,
 	})
 
 	a.HTTPServer = alice.New(
@@ -209,22 +208,18 @@ func New() *App {
 		c.Handler,
 	).Then(a.Router)
 
+	a.setupQueue()
+	return a
+}
+
+func (a *App) setupQueue() {
 	a.Queue = rsq.NewSqsAdapter(rsq.SqsOptions{
-		AwsConfig: &aws.Config{
-			Region: config.AwsRegion,
-			Credentials: credentials.NewStaticCredentials(
-				config.AwsAccessKeyID,
-				config.AwsSecretAccessKey,
-				""),
-		},
-		LongPollTimeout:   10,
-		MessagesPerWorker: 1,
+		LongPollTimeout:   config.SqsLongPollTimeout,
+		MessagesPerWorker: config.SqsMessagesPerWorker,
 		QueueURL:          config.SqsQueueURL,
 	})
 	a.JobRouter = rsq.NewJobRouter()
 	a.JobRouter.Handle("create.error", a.JobHandler(jobs.AfterCreateError))
-
-	return a
 }
 
 func notFoundHandler(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
