@@ -2,7 +2,7 @@ package models
 
 import (
 	"database/sql"
-	"log"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"time"
@@ -10,6 +10,7 @@ import (
 	"go/build"
 
 	"github.com/erraroo/erraroo/config"
+	"github.com/erraroo/erraroo/logger"
 	"github.com/jmoiron/sqlx"
 	"github.com/lann/squirrel"
 	_ "github.com/lib/pq"
@@ -38,7 +39,7 @@ type Store struct {
 func NewStore(config string) (*Store, error) {
 	db, err := sqlx.Connect("postgres", config)
 	if err != nil {
-		log.Printf("[error] could not connect to postgres err=`%s`\n", err)
+		logger.Error("could not connect to postgres", "err", err)
 		return nil, err
 	}
 
@@ -64,7 +65,7 @@ func (s *Store) Migrate() {
 
 	err := dbmigrate.Run(s.DB.DB, path)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 }
 
@@ -72,7 +73,12 @@ func (s *Store) logQuery(start time.Time, query string, args ...interface{}) {
 	end := time.Since(start)
 	query = strings.Replace(query, "\n", "", -1)
 	query = strings.Replace(query, "\t", "", -1)
-	log.Printf("[store] query=`%s` args=`%v` runtime=%v\n", query, args, end)
+
+	if int(end.Nanoseconds()/1000000) > 100 {
+		logger.Info("slow query", "query", query, "args", fmt.Sprintf("%v", args), "runtime", time.Since(start))
+	} else {
+		logger.Debug("store", "query", query, "args", fmt.Sprintf("%v", args), "runtime", time.Since(start))
+	}
 }
 
 func (s *Store) Query(query string, args ...interface{}) (*sql.Rows, error) {

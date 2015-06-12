@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,19 +12,14 @@ import (
 	"github.com/erraroo/erraroo/config"
 	"github.com/erraroo/erraroo/cx"
 	"github.com/erraroo/erraroo/jobs"
+	"github.com/erraroo/erraroo/logger"
 	"github.com/erraroo/erraroo/models"
 )
-
-func init() {
-	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
-}
 
 func main() {
 	err := models.Setup(config.Postgres)
 	if err != nil {
-		log.Printf("[error] could not connect to database err=`%s`\n", err)
-		os.Exit(1)
-		return
+		logger.Fatal("could not connect to database", "err", err)
 	}
 
 	erraroo := app.New()
@@ -52,7 +46,7 @@ func main() {
 				startWorkers(erraroo)
 				ch := make(chan os.Signal)
 				signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
-				log.Println(<-ch)
+				<-ch
 			},
 		},
 
@@ -80,12 +74,12 @@ func main() {
 			Action: func(c *cli.Context) {
 				id, err := cx.StrToID(c.Args().First())
 				if err != nil {
-					log.Fatal(err)
+					logger.Fatal(err)
 				}
 
 				err = jobs.AfterCreateErrorFn(id)
 				if err != nil {
-					log.Fatal(err)
+					logger.Fatal(err)
 				}
 			},
 		},
@@ -95,12 +89,16 @@ func main() {
 }
 
 func startServer(a *app.App) {
-	log.Printf("[http] listening port=%d\n", config.Port)
-	http.ListenAndServe(fmt.Sprintf(":%d", config.Port), a)
+	logger.Info("server listening", "port", config.Port)
+	err := http.ListenAndServe(fmt.Sprintf(":%d", config.Port), a)
+	if err != nil {
+		logger.Fatal(err)
+	}
 }
 
 func startWorkers(a *app.App) {
 	for i := 0; i < config.QueueWorkers; i++ {
+		logger.Info("starting worker", "number", i)
 		go a.Queue.Work(a)
 	}
 }

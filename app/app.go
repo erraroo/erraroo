@@ -17,6 +17,7 @@ import (
 	"github.com/erraroo/erraroo/config"
 	"github.com/erraroo/erraroo/cx"
 	"github.com/erraroo/erraroo/jobs"
+	"github.com/erraroo/erraroo/logger"
 	"github.com/erraroo/erraroo/models"
 	"github.com/erraroo/erraroo/serializers"
 	"github.com/gorilla/mux"
@@ -58,7 +59,7 @@ func (a *App) newContext(r *http.Request) (*cx.Context, error) {
 	if r != nil {
 		id, err := getCurrentUserID(r)
 		if err != nil {
-			log.Printf("[error] getting current user: `%v`\n", err)
+			logger.Error("getting current user", "err", err)
 			return ctx, err
 		}
 
@@ -68,7 +69,7 @@ func (a *App) newContext(r *http.Request) (*cx.Context, error) {
 
 		ctx.User, err = models.Users.FindByID(id)
 		if err != nil {
-			log.Printf("[error] finding user from token: `%v`\n", err)
+			logger.Error("finding user from token", "err", err)
 			return ctx, err
 		}
 	}
@@ -151,12 +152,21 @@ type AppJobHandler func(*rsq.Job, *cx.Context) error
 
 func (a *App) JobHandler(fn AppJobHandler) rsq.JobHandlerFunc {
 	return func(job *rsq.Job) error {
+		start := time.Now()
+
 		ctx, err := a.newContext(nil)
 		if err != nil {
 			return err
 		}
 
-		return fn(job, ctx)
+		err = fn(job, ctx)
+		if err != nil {
+			logger.Error(err, "name", job.Name, "payload", fmt.Sprintf("%s", job.Payload), "runtime", time.Since(start))
+		} else {
+			logger.Info("ran", "name", job.Name, "payload", fmt.Sprintf("%s", job.Payload), "runtime", time.Since(start))
+		}
+
+		return err
 	}
 }
 
@@ -167,7 +177,7 @@ func handleError(err error, w http.ResponseWriter) {
 	case cx.ErrLoginRequired:
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 	default:
-		log.Printf("Error executing app handler `%v`\n", err)
+		logger.Error("executing app handler", "err", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -196,7 +206,7 @@ func New() *App {
 	a.Router.HandleFunc("/healthcheck", healthcheck).Methods("GET")
 
 	c := cors.New(cors.Options{
-		Debug:          true,
+		Debug:          false,
 		AllowedOrigins: []string{"*"},
 		AllowedMethods: []string{"GET", "POST", "DELETE", "PUT"},
 		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type"},
@@ -204,8 +214,8 @@ func New() *App {
 	})
 
 	a.HTTPServer = alice.New(
-		loggingHandler,
 		c.Handler,
+		loggingHandler,
 	).Then(a.Router)
 
 	a.setupQueue()
@@ -241,10 +251,21 @@ func showMe(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	return nil
 }
 
+type loggedResponse struct {
+	http.ResponseWriter
+	status int
+}
+
+func (l *loggedResponse) WriteHeader(status int) {
+	l.status = status
+	l.ResponseWriter.WriteHeader(status)
+}
+
 func loggingHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		h.ServeHTTP(w, r)
-		log.Printf("[http] method=%s url=%s runtime=%v", r.Method, r.URL, time.Since(start))
+		ww := &loggedResponse{w, -1}
+		h.ServeHTTP(ww, r)
+		logger.Info("request", "method", r.Method, "url", r.URL.Path, "runtime", time.Since(start), "status", ww.status)
 	})
 }
