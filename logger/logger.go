@@ -1,16 +1,13 @@
 package logger
 
-import (
-	"github.com/Sirupsen/logrus"
-	"github.com/jserr/jserr/config"
-)
+import "github.com/Sirupsen/logrus"
 
 func init() {
 	//logrus.SetLevel(logrus.DebugLevel)
 	logrus.SetLevel(logrus.InfoLevel)
-	if config.Env == "production" {
-		logrus.SetFormatter(&logrus.JSONFormatter{})
-	}
+	//if config.Env == "production" {
+	logrus.SetFormatter(&logrus.JSONFormatter{})
+	//}
 
 	//logrusrus.AddHook(airbrake.NewHook("https://example.com", "xyz", "development"))
 }
