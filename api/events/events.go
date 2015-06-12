@@ -2,9 +2,9 @@ package events
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 
+	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/cx"
 	"github.com/erraroo/erraroo/models"
 )
@@ -17,7 +17,7 @@ type CreateEventRequest struct {
 
 func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	request := CreateEventRequest{}
-	cx.Decode(r, &request)
+	api.Decode(r, &request)
 
 	token := request.Token
 
@@ -25,9 +25,7 @@ func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	if err != nil {
 		return err
 	}
-
 	data := string(payload)
-	log.Println(request)
 
 	switch request.Kind {
 	case "js.error":

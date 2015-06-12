@@ -8,9 +8,9 @@ import (
 	"syscall"
 
 	"github.com/codegangsta/cli"
+	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/app"
 	"github.com/erraroo/erraroo/config"
-	"github.com/erraroo/erraroo/cx"
 	"github.com/erraroo/erraroo/jobs"
 	"github.com/erraroo/erraroo/logger"
 	"github.com/erraroo/erraroo/models"
@@ -72,14 +72,14 @@ func main() {
 			Name:        "process",
 			Description: "process an error at the cli",
 			Action: func(c *cli.Context) {
-				id, err := cx.StrToID(c.Args().First())
+				id, err := api.StrToID(c.Args().First())
 				if err != nil {
-					logger.Fatal(err)
+					logger.Fatal("could not parse id", "err", err)
 				}
 
 				err = jobs.AfterCreateErrorFn(id)
 				if err != nil {
-					logger.Fatal(err)
+					logger.Fatal("could not complete job", "err", err)
 				}
 			},
 		},
@@ -92,7 +92,7 @@ func startServer(a *app.App) {
 	logger.Info("server listening", "port", config.Port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", config.Port), a)
 	if err != nil {
-		logger.Fatal(err)
+		logger.Fatal(err.Error())
 	}
 }
 

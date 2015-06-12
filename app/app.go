@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/api/errors"
 	"github.com/erraroo/erraroo/api/events"
 	"github.com/erraroo/erraroo/api/groups"
@@ -131,7 +132,7 @@ func (a *App) Handler(fn AppHandler) http.Handler {
 
 		switch err.(type) {
 		case models.ValidationErrors:
-			cx.JSON(w, http.StatusBadRequest, err)
+			api.JSON(w, http.StatusBadRequest, err)
 		default:
 			handleError(err, w)
 		}
@@ -161,7 +162,7 @@ func (a *App) JobHandler(fn AppJobHandler) rsq.JobHandlerFunc {
 
 		err = fn(job, ctx)
 		if err != nil {
-			logger.Error(err, "name", job.Name, "payload", fmt.Sprintf("%s", job.Payload), "runtime", time.Since(start))
+			logger.Error(err.Error(), "name", job.Name, "payload", fmt.Sprintf("%s", job.Payload), "runtime", time.Since(start))
 		} else {
 			logger.Info("ran", "name", job.Name, "payload", fmt.Sprintf("%s", job.Payload), "runtime", time.Since(start))
 		}
@@ -245,7 +246,7 @@ func showMe(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	if ctx.User == nil {
 		w.WriteHeader(http.StatusForbidden)
 	} else {
-		return cx.JSON(w, http.StatusOK, serializers.NewShowUser(ctx.User))
+		return api.JSON(w, http.StatusOK, serializers.NewShowUser(ctx.User))
 	}
 
 	return nil

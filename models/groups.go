@@ -12,6 +12,7 @@ type GroupsStore interface {
 	FindQuery(GroupQuery) (GroupResults, error)
 	FindByID(int64) (*Group, error)
 	Update(*Group) error
+	Touch(*Group) error
 }
 
 type GroupQuery struct {
@@ -70,6 +71,12 @@ func (s *groupsStore) insert(group *Group) error {
 	}
 
 	return group.AfterInsert()
+}
+
+func (s *groupsStore) Touch(g *Group) error {
+	query := "update groups set occurrences=occurrences+1, last_seen_at=(select now() at time zone 'utc'), resolved='f', updated_at=now() where id=$1"
+	_, err := s.Exec(query, g.ID)
+	return err
 }
 
 func (s *groupsStore) Update(group *Group) error {

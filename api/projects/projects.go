@@ -3,6 +3,7 @@ package projects
 import (
 	"net/http"
 
+	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/cx"
 	"github.com/erraroo/erraroo/models"
 	"github.com/erraroo/erraroo/serializers"
@@ -23,7 +24,7 @@ func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		return err
 	}
 
-	return cx.JSON(w, http.StatusCreated, serializers.NewShowProject(project))
+	return api.JSON(w, http.StatusCreated, serializers.NewShowProject(project))
 }
 
 func Index(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
@@ -32,7 +33,7 @@ func Index(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		return err
 	}
 
-	return cx.JSON(w, http.StatusOK, serializers.NewProjects(projects))
+	return api.JSON(w, http.StatusOK, serializers.NewProjects(projects))
 }
 
 func Show(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
@@ -41,7 +42,7 @@ func Show(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		return err
 	}
 
-	return cx.JSON(w, http.StatusOK, serializers.NewShowProject(project))
+	return api.JSON(w, http.StatusOK, serializers.NewShowProject(project))
 }
 
 // Update updates the project record with an incoming UpdateProjectRequest
@@ -58,11 +59,11 @@ func Update(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		return err
 	}
 
-	return cx.JSON(w, http.StatusOK, serializers.NewShowProject(project))
+	return api.JSON(w, http.StatusOK, serializers.NewShowProject(project))
 }
 
 func getAuthorizedProject(r *http.Request, ctx *cx.Context) (*models.Project, error) {
-	id, err := cx.GetID(r)
+	id, err := api.GetID(r)
 	if err != nil {
 		return nil, err
 	}
@@ -81,6 +82,6 @@ func getAuthorizedProject(r *http.Request, ctx *cx.Context) (*models.Project, er
 
 func projectParams(r *http.Request) ProjectParams {
 	request := ProjectRequest{}
-	cx.Decode(r, &request)
+	api.Decode(r, &request)
 	return request.Project
 }

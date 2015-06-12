@@ -55,5 +55,5 @@ func AfterCreateErrorFn(id int64) error {
 		return err
 	}
 
-	return group.Touch()
+	return models.Groups.Touch(group)
 }

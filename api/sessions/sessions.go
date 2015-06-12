@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/config"
 	"github.com/erraroo/erraroo/cx"
 	"github.com/erraroo/erraroo/models"
@@ -30,7 +31,7 @@ func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	errors.Add("Signin", "invalid email or password")
 
 	request := SigninRequest{}
-	cx.Decode(r, &request)
+	api.Decode(r, &request)
 
 	if request.Signin.Email == "" || request.Signin.Password == "" {
 		return errors
@@ -57,7 +58,7 @@ func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		return err
 	}
 
-	return cx.JSON(w, http.StatusCreated, Success{tokenString})
+	return api.JSON(w, http.StatusCreated, Success{tokenString})
 }
 
 func Destroy(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {

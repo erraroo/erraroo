@@ -3,6 +3,7 @@ package signups
 import (
 	"net/http"
 
+	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/cx"
 	"github.com/erraroo/erraroo/models"
 	"github.com/erraroo/erraroo/serializers"
@@ -37,7 +38,7 @@ type Signup struct {
 
 func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	request := SignupRequest{}
-	cx.Decode(r, &request)
+	api.Decode(r, &request)
 
 	errors, err := request.Validate()
 	if err != nil {
@@ -45,7 +46,7 @@ func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	}
 
 	if errors.Any() {
-		return cx.JSON(w, http.StatusBadRequest, errors)
+		return api.JSON(w, http.StatusBadRequest, errors)
 	}
 
 	account, err := models.Accounts.Create()
@@ -62,5 +63,5 @@ func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		return err
 	}
 
-	return cx.JSON(w, http.StatusCreated, serializers.NewShowUser(user))
+	return api.JSON(w, http.StatusCreated, serializers.NewShowUser(user))
 }

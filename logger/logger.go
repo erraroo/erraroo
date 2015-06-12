@@ -1,55 +1,31 @@
 package logger
 
-import "github.com/Sirupsen/logrus"
+import (
+	"os"
+
+	"github.com/erraroo/erraroo/config"
+	"github.com/inconshreveable/log15"
+)
+
+var root log15.Logger
 
 func init() {
-	//logrus.SetLevel(logrus.DebugLevel)
-	logrus.SetLevel(logrus.InfoLevel)
-	//if config.Env == "production" {
-	logrus.SetFormatter(&logrus.JSONFormatter{})
-	//}
-
-	//logrusrus.AddHook(airbrake.NewHook("https://example.com", "xyz", "development"))
+	root = config.Logger()
 }
 
-func Debug(args ...interface{}) {
-	message := args[0]
-	fields := makeFields(args...)
-	logrus.WithFields(fields).Debug(message)
+func Debug(msg string, args ...interface{}) {
+	root.Debug(msg, args...)
 }
 
-func Error(args ...interface{}) {
-	message := args[0]
-	fields := makeFields(args...)
-	logrus.WithFields(fields).Error(message)
+func Error(msg string, args ...interface{}) {
+	root.Error(msg, args...)
 }
 
-func Info(args ...interface{}) {
-	message := args[0]
-	fields := makeFields(args...)
-	logrus.WithFields(fields).Info(message)
+func Info(msg string, args ...interface{}) {
+	root.Info(msg, args...)
 }
 
-func Fatal(args ...interface{}) {
-	message := args[0]
-	fields := makeFields(args...)
-	logrus.WithFields(fields).Fatal(message)
-}
-
-func Fatalf(format string, args ...interface{}) {
-	logrus.Fatalf(format, args)
-}
-
-func makeFields(args ...interface{}) logrus.Fields {
-	fields := logrus.Fields{}
-	length := len(args)
-	if length < 3 && (length-1)%2 != 0 {
-		return fields
-	}
-
-	for i := 1; i < len(args); i += 2 {
-		fields[args[i].(string)] = args[i+1]
-	}
-
-	return fields
+func Fatal(msg string, args ...interface{}) {
+	root.Crit(msg, args...)
+	os.Exit(1)
 }

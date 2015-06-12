@@ -65,7 +65,7 @@ func (s *Store) Migrate() {
 
 	err := dbmigrate.Run(s.DB.DB, path)
 	if err != nil {
-		logger.Fatal(err)
+		logger.Fatal(err.Error())
 	}
 }
 
