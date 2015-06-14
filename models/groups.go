@@ -84,12 +84,13 @@ func (s *groupsStore) Touch(g *Group) error {
 func (s *groupsStore) Update(group *Group) error {
 	group.UpdatedAt = time.Now().UTC()
 
-	query := "update groups set occurrences=$1, last_seen_at=$2, resolved=$3, updated_at=$4 where id=$5"
+	query := "update groups set occurrences=$1, last_seen_at=$2, resolved=$3, updated_at=$4, muted=$5 where id=$6"
 	_, err := s.Exec(query,
 		group.Occurrences,
 		group.LastSeenAt,
 		group.Resolved,
 		group.UpdatedAt,
+		group.Muted,
 		group.ID,
 	)
 

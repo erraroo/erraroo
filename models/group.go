@@ -8,6 +8,7 @@ type Group struct {
 	Checksum    string
 	Occurrences int
 	Resolved    bool
+	Muted       bool
 	LastSeenAt  time.Time `db:"last_seen_at"`
 	ProjectID   int64     `db:"project_id"`
 	CreatedAt   time.Time `db:"created_at"`
@@ -23,4 +24,16 @@ type GroupQueryResults struct {
 
 func newGroup(p *Project, e *Error) *Group {
 	return &Group{ProjectID: p.ID, Message: e.Message(), Checksum: e.Checksum}
+}
+
+func (g *Group) ShouldNotify() bool {
+	if g.WasInserted {
+		return true
+	}
+
+	if g.Resolved && !g.Muted {
+		return true
+	}
+
+	return false
 }

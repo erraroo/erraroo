@@ -17,6 +17,7 @@ type UpdateGroupRequest struct {
 // GroupParams the params that we can safely assign to a Group
 type GroupParams struct {
 	Resolved bool
+	Muted    bool
 }
 
 // Index returns the paginated groups filtered by a project_id
@@ -58,6 +59,7 @@ func Update(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	request := UpdateGroupRequest{}
 	api.Decode(r, &request)
 
+	group.Muted = request.Group.Muted
 	group.Resolved = request.Group.Resolved
 	err = models.Groups.Update(group)
 	if err != nil {
