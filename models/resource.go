@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/erraroo/erraroo/logger"
 	"github.com/nerdyworm/sourcemap"
 )
 
@@ -21,7 +22,13 @@ type Resource struct {
 }
 
 func (r *Resource) baseURL() string {
-	return r.URL[0 : strings.LastIndex(r.URL, "/")+1]
+	u, err := url.Parse(r.URL)
+	if err != nil {
+		logger.Error("could not parse url", "url", r.URL)
+		return ""
+	}
+
+	return u.Scheme + "://" + u.Host + "/"
 }
 
 func (r *Resource) SourceMapURL() string {

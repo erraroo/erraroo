@@ -2,15 +2,18 @@ package models
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
 	"time"
 
+	"github.com/erraroo/erraroo/logger"
 	"github.com/nerdyworm/sourcemap"
 )
+
+var ErrCouldNotGet = errors.New("could not get resource")
 
 type resourcesStore struct {
 	Getter resourceGetter
@@ -47,6 +50,7 @@ func (s *resourcesStore) FindByURL(url string) (*Resource, error) {
 	if sourceMapURL != "" {
 		response2, err := s.Getter.Get(sourceMapURL)
 		if err != nil {
+			logger.Error("could not fetch source map", "url", sourceMapURL, "err", err)
 			return nil, err
 		}
 		defer response2.Close()
@@ -55,11 +59,10 @@ func (s *resourcesStore) FindByURL(url string) (*Resource, error) {
 		if err != nil {
 			return nil, err
 		}
-		sm, err := sourcemap.Parse(sourceMapURL, b)
 
-		//sm, err := sourcemap.Read(response2)
+		sm, err := sourcemap.Parse(sourceMapURL, b)
 		if err != nil {
-			log.Printf("error sourcemap.Read(%s): %v\n", sourceMapURL, err)
+			logger.Error("sourcemap.Parse", "sourceMapURL", sourceMapURL, "err", err)
 			return nil, err
 		}
 
@@ -92,6 +95,11 @@ func (h *httpResourseGetter) Get(url string) (io.ReadCloser, error) {
 			return nil, err
 		}
 		defer response.Body.Close()
+		logger.Info("httpResourseGetter.Get", "url", url, "status", response.StatusCode)
+
+		if response.StatusCode == 403 {
+			return nil, ErrCouldNotGet
+		}
 
 		contents, err := ioutil.ReadAll(response.Body)
 		if err != nil {

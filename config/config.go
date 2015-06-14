@@ -1,9 +1,6 @@
 package config
 
-import (
-	"github.com/inconshreveable/log15"
-	"github.com/spf13/viper"
-)
+import "github.com/spf13/viper"
 
 var (
 	Env                  string
@@ -53,14 +50,4 @@ func init() {
 	SendGridKey = viper.GetString("SendGridKey")
 	SendGridUser = viper.GetString("SendGridUser")
 	MailerBaseURL = viper.GetString("MailerBaseURL")
-}
-
-func Logger() log15.Logger {
-	root := log15.New()
-
-	if Env == "production" {
-		root.SetHandler(log15.LvlFilterHandler(log15.LvlInfo, log15.StderrHandler))
-	}
-
-	return root
 }
