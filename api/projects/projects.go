@@ -17,8 +17,26 @@ type ProjectParams struct {
 	Name string
 }
 
+func (p ProjectParams) Validate() (models.ValidationErrors, error) {
+	errs := models.NewValidationErrors()
+	if p.Name == "" {
+		errs.Add("Name", "can't be blank")
+	}
+
+	return errs, nil
+}
+
 func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	params := projectParams(r)
+	errors, err := params.Validate()
+	if err != nil {
+		return err
+	}
+
+	if errors.Any() {
+		return errors
+	}
+
 	project, err := models.Projects.Create(params.Name, ctx.User.AccountID)
 	if err != nil {
 		return err
@@ -53,6 +71,15 @@ func Update(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	}
 
 	params := projectParams(r)
+	errors, err := params.Validate()
+	if err != nil {
+		return err
+	}
+
+	if errors.Any() {
+		return errors
+	}
+
 	project.Name = params.Name
 	err = models.Projects.Update(project)
 	if err != nil {
