@@ -6,6 +6,7 @@ import (
 
 	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/cx"
+	"github.com/erraroo/erraroo/logger"
 	"github.com/erraroo/erraroo/models"
 )
 
@@ -48,7 +49,7 @@ func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		if err != nil {
 			return err
 		}
-	case "js.performance.timing":
+	case "js.timing":
 		_, err := models.Timings.Create(token, data)
 		if err == models.ErrNotFound {
 			w.WriteHeader(http.StatusBadRequest)
@@ -60,6 +61,8 @@ func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		}
 
 		break
+	case "js.log":
+		logger.Info("js.log", "payload", data)
 	}
 
 	w.WriteHeader(http.StatusCreated)
