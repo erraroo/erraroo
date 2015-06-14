@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"time"
 )
 
@@ -103,7 +102,6 @@ func (e *Error) PopulateStackContext(resources *resourcesStore) error {
 func populateFrameContext(f *frame, resources *resourcesStore) {
 	resource, err := resources.FindByURL(f.URL)
 	if err != nil {
-		log.Printf("error fetching %s `%v`\n", f.URL, err)
 		return
 	}
 

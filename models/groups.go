@@ -2,8 +2,9 @@ package models
 
 import (
 	"database/sql"
-	"log"
 	"time"
+
+	"github.com/erraroo/erraroo/logger"
 )
 
 // ErrorsStore is the interface to error data
@@ -66,11 +67,12 @@ func (s *groupsStore) insert(group *Group) error {
 	).Scan(&group.ID)
 
 	if err != nil {
-		log.Println(err)
+		logger.Error("error inserting group", "err", err)
 		return err
 	}
 
-	return group.AfterInsert()
+	group.WasInserted = true
+	return nil
 }
 
 func (s *groupsStore) Touch(g *Group) error {

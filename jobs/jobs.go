@@ -2,9 +2,10 @@ package jobs
 
 import (
 	"encoding/json"
-	"log"
 
 	"github.com/erraroo/erraroo/cx"
+	"github.com/erraroo/erraroo/logger"
+	"github.com/erraroo/erraroo/mailers"
 	"github.com/erraroo/erraroo/models"
 	"github.com/nerdyworm/rsq"
 )
@@ -39,21 +40,42 @@ func AfterCreateErrorFn(id int64) error {
 	resources := models.NewResourceStore()
 	err = e.PopulateStackContext(resources)
 	if err != nil {
-		log.Println(err)
+		logger.Error("populating stack context", "err", err, "error", e.ID)
 		return err
 	}
 
 	err = models.Errors.Update(e)
 	if err != nil {
-		log.Println(err)
+		logger.Error("updating error", "err", err, "error", e.ID)
 		return err
 	}
 
 	group, err := models.Groups.FindOrCreate(project, e)
 	if err != nil {
-		log.Printf("error creating group: %v\n", err)
+		logger.Error("finding or createing group", "err", err)
 		return err
 	}
 
-	return models.Groups.Touch(group)
+	err = models.Groups.Touch(group)
+	if err != nil {
+		logger.Error("touching group", "err", err, "group", group.ID)
+		return err
+	}
+
+	if group.WasInserted {
+		users, err := models.Users.ByAccountID(project.AccountID)
+		if err != nil {
+			return err
+		}
+
+		for _, user := range users {
+			err := mailers.DeliverNewGroupNotification(user, group)
+			if err != nil {
+				logger.Error("deliver new group notifcation", "err", err, "user", user.ID, "email", user.Email)
+				continue
+			}
+		}
+	}
+
+	return nil
 }

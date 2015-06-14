@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/erraroo/erraroo/config"
+	"github.com/erraroo/erraroo/logger"
 	"github.com/sendgrid/sendgrid-go"
 )
 
@@ -51,5 +52,6 @@ func (s *sendGridSender) Send(to, subject, body string) error {
 type DummySender struct{}
 
 func (n *DummySender) Send(to, subject, body string) error {
+	logger.Debug("DummySender#Send", "to", to, "subject", subject, "body", body)
 	return nil
 }
