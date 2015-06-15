@@ -34,8 +34,8 @@ type App struct {
 
 func New() *App {
 	a := &App{}
-	a.setupMiddleware()
 	a.setupMux()
+	a.setupMiddleware()
 	a.setupQueue()
 	return a
 }
@@ -51,7 +51,7 @@ func (a *App) Run(job *rsq.Job) error {
 func (a *App) setupMiddleware() {
 	a.HTTPServer = alice.New(
 		api.LoggingMiddleware,
-		api.CorsMiddlewar,
+		api.CorsMiddleware,
 		api.GzipMiddleware,
 	).Then(a.Router)
 }

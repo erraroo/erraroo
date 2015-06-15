@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/erraroo/erraroo/api/events"
+	"github.com/erraroo/erraroo/jobs"
 	"github.com/erraroo/erraroo/models"
 	"github.com/erraroo/erraroo/serializers"
 	"github.com/stretchr/testify/assert"
@@ -40,7 +41,7 @@ func TestCreateError(t *testing.T) {
 	e := errors[0]
 	assert.NotEmpty(t, e.Checksum, "the checksum was generated")
 
-	_app.Queue.Work(_app)
+	jobs.Work(_app)
 
 	// It should have created a group for the project
 	groups, err := models.Groups.FindQuery(models.GroupQuery{

@@ -54,7 +54,7 @@ func GzipMiddleware(handler http.Handler) http.Handler {
 	})
 }
 
-func CorsMiddlewar(handler http.Handler) http.Handler {
+func CorsMiddleware(handler http.Handler) http.Handler {
 	cors := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
 		AllowedMethods: []string{"GET", "POST", "DELETE", "PUT"},
