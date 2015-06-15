@@ -14,6 +14,7 @@ import (
 	"github.com/erraroo/erraroo/jobs"
 	"github.com/erraroo/erraroo/logger"
 	"github.com/erraroo/erraroo/models"
+	"github.com/nerdyworm/rsq"
 )
 
 func main() {
@@ -21,6 +22,12 @@ func main() {
 	if err != nil {
 		logger.Fatal("could not connect to database", "err", err)
 	}
+
+	jobs.Use(rsq.NewSqsAdapter(rsq.SqsOptions{
+		LongPollTimeout:   config.SqsLongPollTimeout,
+		MessagesPerWorker: config.SqsMessagesPerWorker,
+		QueueURL:          config.SqsQueueURL,
+	}))
 
 	erraroo := app.New()
 	defer erraroo.Shutdown()
@@ -99,6 +106,6 @@ func startServer(a *app.App) {
 func startWorkers(a *app.App) {
 	for i := 0; i < config.QueueWorkers; i++ {
 		logger.Info("starting worker", "number", i)
-		go a.Queue.Work(a)
+		go jobs.Work(a)
 	}
 }

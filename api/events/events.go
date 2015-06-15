@@ -6,6 +6,7 @@ import (
 
 	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/cx"
+	"github.com/erraroo/erraroo/jobs"
 	"github.com/erraroo/erraroo/logger"
 	"github.com/erraroo/erraroo/models"
 )
@@ -45,7 +46,7 @@ func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 			return err
 		}
 
-		err = ctx.Queue.Push("create.error", payload)
+		err = jobs.Push("create.error", payload)
 		if err != nil {
 			return err
 		}

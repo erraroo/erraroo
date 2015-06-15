@@ -10,10 +10,22 @@ import (
 	"github.com/nerdyworm/rsq"
 )
 
-var Queue rsq.Queue
+var queue rsq.Queue
 
-func Setup(q rsq.Queue) {
-	Queue = q
+func Use(q rsq.Queue) {
+	queue = q
+}
+
+func Work(handler rsq.JobHandler) {
+	queue.Work(handler)
+}
+
+func Push(name string, payload []byte) error {
+	return queue.Push(name, payload)
+}
+
+func Shutdown() error {
+	return queue.Shutdown()
 }
 
 func AfterCreateError(job *rsq.Job, ctx *cx.Context) error {

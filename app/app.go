@@ -1,12 +1,9 @@
 package app
 
 import (
-	"compress/gzip"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -23,27 +20,24 @@ import (
 	"github.com/erraroo/erraroo/jobs"
 	"github.com/erraroo/erraroo/logger"
 	"github.com/erraroo/erraroo/models"
-	"github.com/erraroo/erraroo/serializers"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
 	"github.com/nerdyworm/rsq"
-	"github.com/rs/cors"
 )
-
-// Context is the context that is passed into each request
-type Context struct {
-	Store *models.Store
-	User  *models.User
-	Queue rsq.Queue
-}
 
 // App is the main application for erraroo
 type App struct {
-	Store      *models.Store
 	Router     *mux.Router
 	JobRouter  *rsq.JobRouter
 	HTTPServer http.Handler
-	Queue      rsq.Queue
+}
+
+func New() *App {
+	a := &App{}
+	a.setupMiddleware()
+	a.setupMux()
+	a.setupQueue()
+	return a
 }
 
 func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -54,11 +48,44 @@ func (a *App) Run(job *rsq.Job) error {
 	return a.JobRouter.Run(job)
 }
 
+func (a *App) setupMiddleware() {
+	a.HTTPServer = alice.New(
+		api.LoggingMiddleware,
+		api.CorsMiddlewar,
+		api.GzipMiddleware,
+	).Then(a.Router)
+}
+
+func (a *App) setupMux() {
+	a.Router = mux.NewRouter()
+	a.Router.NotFoundHandler = a.Handler(api.NotFoundHandler)
+	a.Router.Handle("/api/v1/signups", a.Handler(signups.Create)).Methods("POST")
+	a.Router.Handle("/api/v1/sessions", a.Handler(sessions.Create)).Methods("POST")
+	a.Router.Handle("/api/v1/sessions", a.AuthroziedHandler(sessions.Destroy)).Methods("DELETE")
+	a.Router.Handle("/api/v1/me", a.AuthroziedHandler(api.MeHandler)).Methods("GET")
+	a.Router.Handle("/api/v1/events", a.Handler(events.Create)).Methods("POST")
+	a.Router.Handle("/api/v1/projects", a.AuthroziedHandler(projects.Index)).Methods("GET")
+	a.Router.Handle("/api/v1/projects", a.AuthroziedHandler(projects.Create)).Methods("POST")
+	a.Router.Handle("/api/v1/projects/{id}", a.AuthroziedHandler(projects.Show)).Methods("GET")
+	a.Router.Handle("/api/v1/projects/{id}", a.AuthroziedHandler(projects.Update)).Methods("PUT")
+	a.Router.Handle("/api/v1/errors/{id}", a.AuthroziedHandler(errors.Show)).Methods("GET")
+	a.Router.Handle("/api/v1/errors", a.AuthroziedHandler(errors.Index)).Methods("GET")
+	a.Router.Handle("/api/v1/groups", a.AuthroziedHandler(groups.Index)).Methods("GET")
+	a.Router.Handle("/api/v1/groups/{id}", a.AuthroziedHandler(groups.Show)).Methods("GET")
+	a.Router.Handle("/api/v1/groups/{id}", a.AuthroziedHandler(groups.Update)).Methods("PUT")
+	a.Router.Handle("/api/v1/users/{id}", a.AuthroziedHandler(api.MeHandler)).Methods("GET")
+	a.Router.Handle("/api/v1/timings", a.AuthroziedHandler(timings.Index)).Methods("GET")
+	a.Router.HandleFunc("/healthcheck", api.Healthcheck).Methods("GET")
+}
+
+func (a *App) setupQueue() {
+	a.JobRouter = rsq.NewJobRouter()
+	a.JobRouter.Handle("create.error", a.JobHandler(jobs.AfterCreateError))
+}
+
 func (a *App) newContext(r *http.Request) (*cx.Context, error) {
 	var err error
-	ctx := &cx.Context{
-		Queue: a.Queue,
-	}
+	ctx := &cx.Context{}
 
 	if r != nil {
 		id, err := getCurrentUserID(r)
@@ -108,13 +135,17 @@ func getCurrentUserID(r *http.Request) (int64, error) {
 func (a *App) SetupForTesting() {
 	models.SetupForTesting()
 	models.Migrate()
-	a.Queue = rsq.NewMemoryAdapter()
+	jobs.Use(rsq.NewMemoryAdapter())
 }
 
 // Shutdown shutsdown all the things
 func (a *App) Shutdown() {
-	defer a.Queue.Shutdown()
-	models.Shutdown()
+	defer models.Shutdown()
+
+	err := jobs.Shutdown()
+	if err != nil {
+		logger.Error("jobs.Shutdown()", "err", err)
+	}
 }
 
 // AppHandler is the fn we use
@@ -184,117 +215,4 @@ func handleError(err error, w http.ResponseWriter) {
 		logger.Error("executing app handler", "err", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-}
-
-func New() *App {
-	a := &App{}
-	a.Router = mux.NewRouter()
-	a.Router.NotFoundHandler = a.Handler(notFoundHandler)
-	a.Router.Handle("/api/v1/signups", a.Handler(signups.Create)).Methods("POST")
-	a.Router.Handle("/api/v1/sessions", a.Handler(sessions.Create)).Methods("POST")
-	a.Router.Handle("/api/v1/sessions", a.AuthroziedHandler(sessions.Destroy)).Methods("DELETE")
-	a.Router.Handle("/api/v1/me", a.AuthroziedHandler(showMe)).Methods("GET")
-	a.Router.Handle("/api/v1/events", a.Handler(events.Create)).Methods("POST")
-	a.Router.Handle("/api/v1/projects", a.AuthroziedHandler(projects.Index)).Methods("GET")
-	a.Router.Handle("/api/v1/projects", a.AuthroziedHandler(projects.Create)).Methods("POST")
-	a.Router.Handle("/api/v1/projects/{id}", a.AuthroziedHandler(projects.Show)).Methods("GET")
-	a.Router.Handle("/api/v1/projects/{id}", a.AuthroziedHandler(projects.Update)).Methods("PUT")
-	a.Router.Handle("/api/v1/errors/{id}", a.AuthroziedHandler(errors.Show)).Methods("GET")
-	a.Router.Handle("/api/v1/errors", a.AuthroziedHandler(errors.Index)).Methods("GET")
-	a.Router.Handle("/api/v1/groups", a.AuthroziedHandler(groups.Index)).Methods("GET")
-	a.Router.Handle("/api/v1/groups/{id}", a.AuthroziedHandler(groups.Show)).Methods("GET")
-	a.Router.Handle("/api/v1/groups/{id}", a.AuthroziedHandler(groups.Update)).Methods("PUT")
-	a.Router.Handle("/api/v1/users/{id}", a.AuthroziedHandler(showMe)).Methods("GET")
-	a.Router.Handle("/api/v1/timings", a.AuthroziedHandler(timings.Index)).Methods("GET")
-
-	a.Router.HandleFunc("/healthcheck", healthcheck).Methods("GET")
-
-	c := cors.New(cors.Options{
-		Debug:          false,
-		AllowedOrigins: []string{"*"},
-		AllowedMethods: []string{"GET", "POST", "DELETE", "PUT"},
-		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type"},
-		MaxAge:         60 * 10,
-	})
-
-	a.HTTPServer = alice.New(
-		c.Handler,
-		loggingMiddleware,
-		gzipMiddleware,
-	).Then(a.Router)
-
-	a.setupQueue()
-	return a
-}
-
-func (a *App) setupQueue() {
-	a.Queue = rsq.NewSqsAdapter(rsq.SqsOptions{
-		LongPollTimeout:   config.SqsLongPollTimeout,
-		MessagesPerWorker: config.SqsMessagesPerWorker,
-		QueueURL:          config.SqsQueueURL,
-	})
-	a.JobRouter = rsq.NewJobRouter()
-	a.JobRouter.Handle("create.error", a.JobHandler(jobs.AfterCreateError))
-}
-
-func notFoundHandler(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
-	http.Error(w, "not found", http.StatusNotFound)
-	return nil
-}
-
-func healthcheck(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "ok", http.StatusOK)
-}
-
-func showMe(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
-	if ctx.User == nil {
-		w.WriteHeader(http.StatusForbidden)
-	} else {
-		return api.JSON(w, http.StatusOK, serializers.NewShowUser(ctx.User))
-	}
-
-	return nil
-}
-
-type loggedResponse struct {
-	http.ResponseWriter
-	status int
-}
-
-func (l *loggedResponse) WriteHeader(status int) {
-	l.status = status
-	l.ResponseWriter.WriteHeader(status)
-}
-
-func loggingMiddleware(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		ww := &loggedResponse{w, -1}
-		h.ServeHTTP(ww, r)
-		logger.Info("request", "method", r.Method, "url", r.URL.Path, "runtime", time.Since(start), "status", ww.status)
-	})
-}
-
-type gzipResponseWriter struct {
-	io.Writer
-	http.ResponseWriter
-}
-
-func (w gzipResponseWriter) Write(b []byte) (int, error) {
-	return w.Writer.Write(b)
-}
-
-func gzipMiddleware(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
-			handler.ServeHTTP(w, r)
-			return
-		}
-
-		w.Header().Set("Content-Encoding", "gzip")
-		gz := gzip.NewWriter(w)
-		defer gz.Close()
-		gzw := gzipResponseWriter{Writer: gz, ResponseWriter: w}
-		handler.ServeHTTP(gzw, r)
-	})
 }
