@@ -8,23 +8,24 @@ import (
 func Setup(config string) error {
 	var err error
 
-	MainStore, err = NewStore(config)
+	store, err = NewStore(config)
 	if err != nil {
 		return err
 	}
 
-	Accounts = &accountsStore{MainStore}
-	Errors = &errorsStore{MainStore}
-	Groups = &groupsStore{MainStore}
-	Projects = &projectsStore{MainStore}
-	Timings = &timingsStore{MainStore}
-	Users = &usersStore{MainStore}
+	Accounts = &accountsStore{store}
+	Errors = &errorsStore{store}
+	Groups = &groupsStore{store}
+	Prefs = &prefsStore{store}
+	Projects = &projectsStore{store}
+	Timings = &timingsStore{store}
+	Users = &usersStore{store}
 
 	return nil
 }
 
 func Shutdown() {
-	MainStore.Close()
+	store.Close()
 }
 
 // SetupForTesting setups up the database and such for testing
@@ -35,5 +36,5 @@ func SetupForTesting() {
 }
 
 func Migrate() {
-	MainStore.Migrate()
+	store.Migrate()
 }

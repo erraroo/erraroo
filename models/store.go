@@ -20,13 +20,14 @@ import (
 var (
 	builder = squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
 
-	MainStore *Store
-	Accounts  AccountsStore
-	Errors    ErrorsStore
-	Groups    GroupsStore
-	Projects  ProjectsStore
-	Timings   TimingsStore
-	Users     UsersStore
+	store    *Store
+	Accounts AccountsStore
+	Errors   ErrorsStore
+	Groups   GroupsStore
+	Prefs    PrefsStore
+	Projects ProjectsStore
+	Timings  TimingsStore
+	Users    UsersStore
 )
 
 // Store is the abstraction used to interact with the

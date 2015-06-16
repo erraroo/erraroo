@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"log"
 	"testing"
 
 	"github.com/erraroo/erraroo/models"
@@ -67,5 +68,24 @@ func TestErrorCreated_DeliversNotifcationsWhenResolved(t *testing.T) {
 	emailSender.Clear()
 	err = ErrorCreated(project, e)
 	assert.Nil(t, err)
+	assert.Equal(t, 0, len(emailSender.sends))
+}
+
+func TestErrorCreated_DoesNotDeliverNotifcationsToUsersThatDoNotWantThem(t *testing.T) {
+	emailSender.Clear()
+
+	_, user, project := aup(t)
+	e := makeError(t, project, "{}")
+	pref, err := models.Prefs.Get(user)
+	assert.Nil(t, err)
+	assert.NotNil(t, pref)
+
+	pref.EmailOnError = false
+	err = models.Prefs.Update(pref)
+	assert.Nil(t, err)
+
+	log.Println(pref)
+
+	err = ErrorCreated(project, e)
 	assert.Equal(t, 0, len(emailSender.sends))
 }

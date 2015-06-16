@@ -37,11 +37,20 @@ func groupNotifcations(project *models.Project, group *models.Group) error {
 	}
 
 	for _, user := range users {
-		err := mailers.DeliverNewGroupNotification(user, group)
+		pref, err := models.Prefs.Get(user)
 		if err != nil {
-			logger.Error("deliver new group notifcation", "err", err, "user", user.ID, "email", user.Email)
+			logger.Error("getting prefs for user", "err", err, "user", user.ID, "email", user.Email)
 			continue
 		}
+
+		if pref.EmailOnError {
+			err = mailers.DeliverNewGroupNotification(user, group)
+			if err != nil {
+				logger.Error("deliver new group notifcation", "err", err, "user", user.ID, "email", user.Email)
+				continue
+			}
+		}
+
 	}
 
 	return nil
