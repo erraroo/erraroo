@@ -5,6 +5,7 @@ import (
 
 	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/cx"
+	"github.com/erraroo/erraroo/logger"
 	"github.com/erraroo/erraroo/models"
 	"github.com/erraroo/erraroo/serializers"
 )
@@ -63,5 +64,11 @@ func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		return err
 	}
 
-	return api.JSON(w, http.StatusCreated, serializers.NewShowUser(user))
+	prefs, err := models.Prefs.Get(user)
+	if err != nil {
+		logger.Error("getting prefs for a sign up", "err", err, "user", ctx.User.ID, "email", ctx.User.Email)
+		return err
+	}
+
+	return api.JSON(w, http.StatusCreated, serializers.NewShowUser(user, prefs))
 }

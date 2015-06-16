@@ -1,7 +1,6 @@
 package usecases
 
 import (
-	"log"
 	"testing"
 
 	"github.com/erraroo/erraroo/models"
@@ -83,8 +82,6 @@ func TestErrorCreated_DoesNotDeliverNotifcationsToUsersThatDoNotWantThem(t *test
 	pref.EmailOnError = false
 	err = models.Prefs.Update(pref)
 	assert.Nil(t, err)
-
-	log.Println(pref)
 
 	err = ErrorCreated(project, e)
 	assert.Equal(t, 0, len(emailSender.sends))

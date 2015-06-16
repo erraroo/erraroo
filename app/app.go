@@ -11,6 +11,7 @@ import (
 	"github.com/erraroo/erraroo/api/errors"
 	"github.com/erraroo/erraroo/api/events"
 	"github.com/erraroo/erraroo/api/groups"
+	"github.com/erraroo/erraroo/api/prefs"
 	"github.com/erraroo/erraroo/api/projects"
 	"github.com/erraroo/erraroo/api/sessions"
 	"github.com/erraroo/erraroo/api/signups"
@@ -74,6 +75,7 @@ func (a *App) setupMux() {
 	a.Router.Handle("/api/v1/groups/{id}", a.AuthroziedHandler(groups.Show)).Methods("GET")
 	a.Router.Handle("/api/v1/groups/{id}", a.AuthroziedHandler(groups.Update)).Methods("PUT")
 	a.Router.Handle("/api/v1/users/{id}", a.AuthroziedHandler(api.MeHandler)).Methods("GET")
+	a.Router.Handle("/api/v1/prefs/{id}", a.AuthroziedHandler(prefs.Update)).Methods("PUT")
 	a.Router.Handle("/api/v1/timings", a.AuthroziedHandler(timings.Index)).Methods("GET")
 	a.Router.HandleFunc("/healthcheck", api.Healthcheck).Methods("GET")
 }

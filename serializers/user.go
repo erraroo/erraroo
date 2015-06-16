@@ -12,6 +12,7 @@ type User struct {
 	ID     int64
 	Email  string
 	Avatar string
+	PrefID int64
 }
 
 func NewUser(user *models.User) User {
@@ -19,15 +20,18 @@ func NewUser(user *models.User) User {
 		ID:     user.ID,
 		Email:  user.Email,
 		Avatar: gravatar(user.Email),
+		PrefID: user.ID,
 	}
 }
 
 type ShowUser struct {
-	User User
+	User  User
+	Prefs []Pref
 }
 
-func NewShowUser(user *models.User) ShowUser {
-	return ShowUser{NewUser(user)}
+func NewShowUser(user *models.User, pref *models.Pref) ShowUser {
+	prefs := []Pref{NewPref(pref)}
+	return ShowUser{NewUser(user), prefs}
 }
 
 func gravatar(email string) string {
