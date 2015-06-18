@@ -94,7 +94,7 @@ func TestRatelimiter(t *testing.T) {
 	limiter := RedisRateLimiter{
 		maxPerInterval: 1,
 		minDelta:       0,
-		interval:       10 * time.Millisecond,
+		interval:       5 * time.Millisecond,
 		client:         client,
 	}
 
@@ -108,7 +108,7 @@ func TestRatelimiter(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, ok, false)
 
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(5 * time.Millisecond)
 
 	ok, err = limiter.Check(key)
 	assert.Nil(t, err)
