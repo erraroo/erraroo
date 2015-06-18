@@ -36,7 +36,7 @@ func (r *RedisRateLimiter) Check(key string) (bool, error) {
 
 	if lenTokens > 0 {
 		lastRequestAt := tokens[len(tokens)-1]
-		secondsSinceLastRequest := time.Now().Unix() - lastRequestAt
+		secondsSinceLastRequest := time.Now().UnixNano() - lastRequestAt
 		if exceededIntervalQuota || secondsSinceLastRequest < r.minDelta {
 			return false, nil
 		}
@@ -51,7 +51,7 @@ func (r *RedisRateLimiter) getTokens(key string) ([]int64, error) {
 	defer multi.Close()
 
 	now := time.Now()
-	clearBefore := now.Add(-1 * r.interval).Unix()
+	clearBefore := now.Add(-1 * r.interval).UnixNano()
 
 	multi.ZRemRangeByScore(key, "0", fmt.Sprintf("%d", clearBefore))
 
@@ -68,8 +68,8 @@ func (r *RedisRateLimiter) getTokens(key string) ([]int64, error) {
 	}
 
 	multi.ZAdd(key, redis.Z{
-		Score:  float64(now.Unix()),
-		Member: fmt.Sprintf("%d", now.Unix()),
+		Score:  float64(now.UnixNano()),
+		Member: fmt.Sprintf("%d", now.UnixNano()),
 	})
 
 	multi.Expire(key, interval)
@@ -89,11 +89,12 @@ func TestRatelimiter(t *testing.T) {
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
+	defer client.Close()
 
 	limiter := RedisRateLimiter{
 		maxPerInterval: 1,
 		minDelta:       0,
-		interval:       time.Second,
+		interval:       10 * time.Millisecond,
 		client:         client,
 	}
 
@@ -106,4 +107,10 @@ func TestRatelimiter(t *testing.T) {
 	ok, err = limiter.Check(key)
 	assert.Nil(t, err)
 	assert.Equal(t, ok, false)
+
+	time.Sleep(10 * time.Millisecond)
+
+	ok, err = limiter.Check(key)
+	assert.Nil(t, err)
+	assert.Equal(t, ok, true)
 }
