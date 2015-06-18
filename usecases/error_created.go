@@ -6,7 +6,43 @@ import (
 	"github.com/erraroo/erraroo/models"
 )
 
-func ErrorCreated(p *models.Project, e *models.Error) error {
+func ErrorCreated(errorID int64) error {
+	e, err := models.Errors.FindByID(errorID)
+	if err != nil {
+		return err
+	}
+
+	err = processError(e)
+	if err != nil {
+		return err
+	}
+
+	return afterErrorProcessed(e)
+}
+
+func processError(e *models.Error) error {
+	resources := models.NewResourceStore()
+
+	err := e.PopulateStackContext(resources)
+	if err != nil {
+		logger.Error("populating stack context", "err", err, "error.ID", e.ID)
+	} else {
+		err = models.Errors.Update(e)
+		if err != nil {
+			logger.Error("updating error", "err", err, "error", e.ID)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func afterErrorProcessed(e *models.Error) error {
+	p, err := models.Projects.FindByID(e.ProjectID)
+	if err != nil {
+		return err
+	}
+
 	group, err := models.Groups.FindOrCreate(p, e)
 	if err != nil {
 		logger.Error("finding or creating group", "err", err)
@@ -14,7 +50,7 @@ func ErrorCreated(p *models.Project, e *models.Error) error {
 	}
 
 	if group.ShouldNotify() {
-		err = groupNotifcations(p, group)
+		err = notifyUsersOfNewError(p, group)
 		if err != nil {
 			logger.Error("group notifcations", "err", err, "project", p.ID, "group", group.ID)
 			return err
@@ -28,9 +64,10 @@ func ErrorCreated(p *models.Project, e *models.Error) error {
 	}
 
 	return nil
+
 }
 
-func groupNotifcations(project *models.Project, group *models.Group) error {
+func notifyUsersOfNewError(project *models.Project, group *models.Group) error {
 	users, err := models.Users.ByAccountID(project.AccountID)
 	if err != nil {
 		return err

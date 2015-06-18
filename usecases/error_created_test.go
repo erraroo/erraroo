@@ -11,7 +11,7 @@ func TestErrorCreatedCreatesGroup(t *testing.T) {
 	_, _, project := aup(t)
 	e := makeError(t, project, "{}")
 
-	err := ErrorCreated(project, e)
+	err := ErrorCreated(e.ID)
 	assert.Nil(t, err)
 
 	groups, err := models.Groups.FindQuery(models.GroupQuery{ProjectID: project.ID})
@@ -24,14 +24,14 @@ func TestErrorCreated_DeliversNotifcations(t *testing.T) {
 	_, user, project := aup(t)
 	e := makeError(t, project, "{}")
 
-	err := ErrorCreated(project, e)
+	err := ErrorCreated(e.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, len(emailSender.sends), 1)
 
 	send := emailSender.sends[0]
 	assert.Equal(t, send["to"], user.Email)
 
-	err = ErrorCreated(project, e)
+	err = ErrorCreated(e.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(emailSender.sends))
 }
@@ -42,7 +42,7 @@ func TestErrorCreated_DeliversNotifcationsWhenResolved(t *testing.T) {
 	_, _, project := aup(t)
 	e := makeError(t, project, "{}")
 
-	err := ErrorCreated(project, e)
+	err := ErrorCreated(e.ID)
 	assert.Equal(t, 1, len(emailSender.sends))
 
 	group, err := models.Groups.FindOrCreate(project, e)
@@ -51,7 +51,7 @@ func TestErrorCreated_DeliversNotifcationsWhenResolved(t *testing.T) {
 	assert.Nil(t, err)
 
 	emailSender.Clear()
-	err = ErrorCreated(project, e)
+	err = ErrorCreated(e.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(emailSender.sends))
 
@@ -65,7 +65,7 @@ func TestErrorCreated_DeliversNotifcationsWhenResolved(t *testing.T) {
 	assert.Nil(t, err)
 
 	emailSender.Clear()
-	err = ErrorCreated(project, e)
+	err = ErrorCreated(e.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(emailSender.sends))
 }
@@ -83,6 +83,6 @@ func TestErrorCreated_DoesNotDeliverNotifcationsToUsersThatDoNotWantThem(t *test
 	err = models.Prefs.Update(pref)
 	assert.Nil(t, err)
 
-	err = ErrorCreated(project, e)
+	err = ErrorCreated(e.ID)
 	assert.Equal(t, 0, len(emailSender.sends))
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/erraroo/erraroo/jobs"
 	"github.com/erraroo/erraroo/logger"
 	"github.com/erraroo/erraroo/models"
+	"github.com/erraroo/erraroo/usecases"
 	"github.com/nerdyworm/rsq"
 )
 
@@ -76,18 +77,31 @@ func main() {
 		},
 
 		cli.Command{
-			Name:        "process",
-			Description: "process an error at the cli",
-			Action: func(c *cli.Context) {
-				id, err := api.StrToID(c.Args().First())
-				if err != nil {
-					logger.Fatal("could not parse id", "err", err)
-				}
+			Name:  "usecases",
+			Usage: "run a usecase",
+			Subcommands: []cli.Command{
+				{
+					Name:  "ErrorCreated",
+					Usage: "run the ErrorCreated usecase",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "id",
+							Usage: "the error's id",
+						},
+					},
 
-				err = jobs.AfterCreateErrorFn(id)
-				if err != nil {
-					logger.Fatal("could not complete job", "err", err)
-				}
+					Action: func(c *cli.Context) {
+						id, err := api.StrToID(c.String("id"))
+						if err != nil {
+							logger.Fatal("could not parse id argument", "err", err)
+						}
+
+						err = usecases.ErrorCreated(id)
+						if err != nil {
+							logger.Fatal("could not complete job", "err", err)
+						}
+					},
+				},
 			},
 		},
 	}

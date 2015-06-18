@@ -86,7 +86,10 @@ func (e *Error) PopulateStackContext(resources *resourcesStore) error {
 	}
 
 	for i := range jse.Trace.Stack {
-		populateFrameContext(&jse.Trace.Stack[i], resources)
+		err = populateFrameContext(&jse.Trace.Stack[i], resources)
+		if err != nil {
+			return err
+		}
 	}
 
 	payload, err := json.Marshal(jse)
@@ -99,13 +102,14 @@ func (e *Error) PopulateStackContext(resources *resourcesStore) error {
 	return nil
 }
 
-func populateFrameContext(f *frame, resources *resourcesStore) {
+func populateFrameContext(f *frame, resources *resourcesStore) error {
 	resource, err := resources.FindByURL(f.URL)
 	if err != nil {
-		return
+		return err
 	}
 
 	f.SourceContext = resource.Context(f.Line, f.Column)
+	return nil
 }
 
 func (e *Error) Message() string {

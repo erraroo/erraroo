@@ -95,9 +95,9 @@ func (h *httpResourseGetter) Get(url string) (io.ReadCloser, error) {
 			return nil, err
 		}
 		defer response.Body.Close()
-		logger.Info("httpResourseGetter.Get", "url", url, "status", response.StatusCode)
 
-		if response.StatusCode == 403 {
+		if response.StatusCode != 200 {
+			logger.Error("httpResourseGetter.Get", "url", url, "status", response.StatusCode)
 			return nil, ErrCouldNotGet
 		}
 

@@ -76,8 +76,8 @@ func (s *groupsStore) insert(group *Group) error {
 }
 
 func (s *groupsStore) Touch(g *Group) error {
-	query := "update groups set occurrences=occurrences+1, last_seen_at=(select now() at time zone 'utc'), resolved='f', updated_at=now() where id=$1"
-	_, err := s.Exec(query, g.ID)
+	query := "update groups set occurrences=(select count(*) from errors where errors.checksum = $1), last_seen_at=now_utc(), resolved='f', updated_at=now_utc() where id=$2"
+	_, err := s.Exec(query, g.Checksum, g.ID)
 	return err
 }
 
