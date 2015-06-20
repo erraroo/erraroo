@@ -1,8 +1,16 @@
 package usecases
 
-import "github.com/erraroo/erraroo/logger"
+import (
+	"github.com/erraroo/erraroo/logger"
+	"github.com/erraroo/erraroo/models"
+)
 
 func RateExceeded(token string) error {
-	logger.Info("SHOULD SEND EMAIL TO PROJECT FOLKS", "id", "token", token)
+	project, err := models.Projects.FindByToken(token)
+	if err != nil {
+		return err
+	}
+
+	logger.Error("rate limited exceeded", "account", project.AccountID)
 	return nil
 }
