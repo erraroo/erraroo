@@ -50,10 +50,9 @@ create table groups (
   checksum text not null,
   occurrences integer not null default 0,
   resolved boolean not null default false,
+  muted boolean default false not null,
   last_seen_at timestamp without time zone not null default now(),
-
   project_id bigint references projects(id) not null,
-
   created_at timestamp without time zone not null default now(),
   updated_at timestamp without time zone not null default now()
 );
@@ -71,3 +70,8 @@ create table timings (
 
 create index timings_project_id_idx on timings(project_id);
 create index timings_created_at_idx on timings(created_at);
+
+create table prefs (
+  user_id bigint references users(id) not null primary key,
+  email_on_error boolean default true not null
+);
