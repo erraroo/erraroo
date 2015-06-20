@@ -143,7 +143,6 @@ func (a *App) SetupForTesting() {
 // Shutdown shutsdown all the things
 func (a *App) Shutdown() {
 	defer models.Shutdown()
-	defer api.Shutdown()
 
 	err := jobs.Shutdown()
 	if err != nil {

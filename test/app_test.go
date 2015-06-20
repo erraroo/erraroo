@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/api/sessions"
 	"github.com/erraroo/erraroo/app"
 	"github.com/erraroo/erraroo/config"
@@ -31,6 +32,7 @@ func TestMain(m *testing.M) {
 	config.Postgres = "dbname=erraroo_test sslmode=disable"
 
 	models.Setup(config.Postgres)
+	api.Limiter = api.NoLimiter()
 
 	_app = app.New()
 	_app.SetupForTesting()

@@ -7,6 +7,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"gopkg.in/redis.v3"
+
 	"github.com/codegangsta/cli"
 	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/app"
@@ -29,6 +31,15 @@ func main() {
 		MessagesPerWorker: config.SqsMessagesPerWorker,
 		QueueURL:          config.SqsQueueURL,
 	}))
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+	defer redisClient.Close()
+
+	api.Limiter = api.NewRedisRateLimiter(redisClient)
 
 	erraroo := app.New()
 	defer erraroo.Shutdown()

@@ -14,24 +14,12 @@ type RateLimiter interface {
 
 var Limiter RateLimiter
 
-var redisClient *redis.Client
-
-func init() {
-	redisClient = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
-
-	Limiter = &RedisRateLimiter{redisClient}
-}
-
-func Shutdown() error {
-	return redisClient.Close()
-}
-
 type RedisRateLimiter struct {
 	client *redis.Client
+}
+
+func NewRedisRateLimiter(client *redis.Client) *RedisRateLimiter {
+	return &RedisRateLimiter{client: client}
 }
 
 func (r *RedisRateLimiter) Check(key string, interval time.Duration, max int) (bool, error) {
@@ -85,4 +73,14 @@ func (r *RedisRateLimiter) getTokens(key string, interval time.Duration) ([]int6
 	}
 
 	return results, nil
+}
+
+func NoLimiter() RateLimiter {
+	return &noLimiter{}
+}
+
+type noLimiter struct{}
+
+func (*noLimiter) Check(key string, i time.Duration, n int) (bool, error) {
+	return true, nil
 }
