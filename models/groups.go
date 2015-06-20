@@ -8,31 +8,31 @@ import (
 )
 
 // EventsStore is the interface to error data
-type GroupsStore interface {
-	FindOrCreate(*Project, *Event) (*Group, error)
-	FindQuery(GroupQuery) (GroupResults, error)
-	FindByID(int64) (*Group, error)
-	Update(*Group) error
-	Touch(*Group) error
+type ErrorsStore interface {
+	FindOrCreate(*Project, *Event) (*Error, error)
+	FindQuery(ErrorQuery) (ErrorResults, error)
+	FindByID(int64) (*Error, error)
+	Update(*Error) error
+	Touch(*Error) error
 }
 
-type GroupQuery struct {
+type ErrorQuery struct {
 	ProjectID int64
 	Resolved  bool
 	QueryOptions
 }
 
-type GroupResults struct {
-	Groups []*Group
+type ErrorResults struct {
+	Errors []*Error
 	Total  int64
-	Query  GroupQuery
+	Query  ErrorQuery
 }
-type groupsStore struct{ *Store }
+type errorsStore struct{ *Store }
 
-func (s *groupsStore) FindOrCreate(p *Project, e *Event) (*Group, error) {
+func (s *errorsStore) FindOrCreate(p *Project, e *Event) (*Error, error) {
 	group, err := s.findByProjectIDAndChecksum(p.ID, e.Checksum)
 	if err == ErrNotFound {
-		group = newGroup(p, e)
+		group = newError(p, e)
 		return group, s.insert(group)
 	} else if err != nil {
 		return nil, err
@@ -41,9 +41,9 @@ func (s *groupsStore) FindOrCreate(p *Project, e *Event) (*Group, error) {
 	return group, nil
 }
 
-func (s *groupsStore) findByProjectIDAndChecksum(id int64, checksum string) (*Group, error) {
-	group := &Group{}
-	query := "select * from groups where project_id=$1 and checksum=$2 limit 1"
+func (s *errorsStore) findByProjectIDAndChecksum(id int64, checksum string) (*Error, error) {
+	group := &Error{}
+	query := "select * from errors where project_id=$1 and checksum=$2 limit 1"
 	err := s.Get(group, query, id, checksum)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
@@ -56,9 +56,10 @@ func (s *groupsStore) findByProjectIDAndChecksum(id int64, checksum string) (*Gr
 	return group, nil
 }
 
-func (s *groupsStore) insert(group *Group) error {
-	query := "insert into groups (message, checksum, project_id, occurrences, last_seen_at) values($1,$2,$3,$4,$5) returning id"
+func (s *errorsStore) insert(group *Error) error {
+	query := "insert into errors (name, message, checksum, project_id, occurrences, last_seen_at) values($1,$2,$3,$4,$5,$6) returning id"
 	err := s.QueryRow(query,
+		group.Name,
 		group.Message,
 		group.Checksum,
 		group.ProjectID,
@@ -75,16 +76,16 @@ func (s *groupsStore) insert(group *Group) error {
 	return nil
 }
 
-func (s *groupsStore) Touch(g *Group) error {
-	query := "update groups set occurrences=(select count(*) from errors where errors.checksum = $1), last_seen_at=now_utc(), resolved='f', updated_at=now_utc() where id=$2"
+func (s *errorsStore) Touch(g *Error) error {
+	query := "update errors set occurrences=(select count(*) from errors where errors.checksum = $1), last_seen_at=now_utc(), resolved='f', updated_at=now_utc() where id=$2"
 	_, err := s.Exec(query, g.Checksum, g.ID)
 	return err
 }
 
-func (s *groupsStore) Update(group *Group) error {
+func (s *errorsStore) Update(group *Error) error {
 	group.UpdatedAt = time.Now().UTC()
 
-	query := "update groups set occurrences=$1, last_seen_at=$2, resolved=$3, updated_at=$4, muted=$5 where id=$6"
+	query := "update errors set occurrences=$1, last_seen_at=$2, resolved=$3, updated_at=$4, muted=$5 where id=$6"
 	_, err := s.Exec(query,
 		group.Occurrences,
 		group.LastSeenAt,
@@ -97,13 +98,13 @@ func (s *groupsStore) Update(group *Group) error {
 	return err
 }
 
-func (s *groupsStore) FindQuery(q GroupQuery) (GroupResults, error) {
-	groups := GroupResults{}
-	groups.Query = q
-	groups.Groups = []*Group{}
+func (s *errorsStore) FindQuery(q ErrorQuery) (ErrorResults, error) {
+	errors := ErrorResults{}
+	errors.Query = q
+	errors.Errors = []*Error{}
 
-	countQuery := builder.Select("count(*)").From("groups")
-	findQuery := builder.Select("*").From("groups")
+	countQuery := builder.Select("count(*)").From("errors")
+	findQuery := builder.Select("*").From("errors")
 
 	countQuery = countQuery.Where("project_id=?", q.ProjectID)
 	findQuery = findQuery.Where("project_id=?", q.ProjectID)
@@ -113,23 +114,23 @@ func (s *groupsStore) FindQuery(q GroupQuery) (GroupResults, error) {
 	findQuery = findQuery.OrderBy("last_seen_at desc, created_at desc")
 
 	query, args, _ := findQuery.ToSql()
-	err := s.Select(&groups.Groups, query, args...)
+	err := s.Select(&errors.Errors, query, args...)
 	if err != nil {
-		return groups, err
+		return errors, err
 	}
 
 	query, args, _ = countQuery.ToSql()
-	err = s.Get(&groups.Total, query, args...)
+	err = s.Get(&errors.Total, query, args...)
 	if err != nil {
-		return groups, err
+		return errors, err
 	}
 
-	return groups, err
+	return errors, err
 }
 
-func (s *groupsStore) FindByID(id int64) (*Group, error) {
-	group := &Group{}
-	query := "select * from groups where id=$1 limit 1"
+func (s *errorsStore) FindByID(id int64) (*Error, error) {
+	group := &Error{}
+	query := "select * from errors where id=$1 limit 1"
 	err := s.Get(group, query, id)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound

@@ -43,7 +43,7 @@ func afterEventProcessed(e *models.Event) error {
 		return err
 	}
 
-	group, err := models.Groups.FindOrCreate(p, e)
+	group, err := models.Errors.FindOrCreate(p, e)
 	if err != nil {
 		logger.Error("finding or creating group", "err", err)
 		return err
@@ -57,7 +57,7 @@ func afterEventProcessed(e *models.Event) error {
 		}
 	}
 
-	err = models.Groups.Touch(group)
+	err = models.Errors.Touch(group)
 	if err != nil {
 		logger.Error("touching group", "err", err, "group", group.ID)
 		return err
@@ -67,7 +67,7 @@ func afterEventProcessed(e *models.Event) error {
 
 }
 
-func notifyUsersOfNewError(project *models.Project, group *models.Group) error {
+func notifyUsersOfNewError(project *models.Project, group *models.Error) error {
 	users, err := models.Users.ByAccountID(project.AccountID)
 	if err != nil {
 		return err
@@ -81,7 +81,7 @@ func notifyUsersOfNewError(project *models.Project, group *models.Group) error {
 		}
 
 		if pref.EmailOnError {
-			err = mailers.DeliverNewGroupNotification(user, group)
+			err = mailers.DeliverNewErrorNotification(user, group)
 			if err != nil {
 				logger.Error("deliver new group notifcation", "err", err, "user", user.ID, "email", user.Email)
 				continue

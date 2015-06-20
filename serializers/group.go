@@ -6,36 +6,36 @@ import (
 	"github.com/erraroo/erraroo/models"
 )
 
-type Group struct {
-	*models.Group
+type Error struct {
+	*models.Error
 }
 
-type ShowGroup struct {
-	Group Group
+type ShowError struct {
+	Error Error
 }
 
-type UpdateGroup struct {
-	Group    Group
+type UpdateError struct {
+	Error    Error
 	Projects []Project
 }
 
-func NewShowGroup(g *models.Group) ShowGroup {
-	return ShowGroup{
-		Group: Group{g},
+func NewShowError(g *models.Error) ShowError {
+	return ShowError{
+		Error: Error{g},
 	}
 }
 
-func NewUpdateGroup(p *models.Project, g *models.Group) UpdateGroup {
-	return UpdateGroup{
-		Group: Group{g},
+func NewUpdateError(p *models.Project, g *models.Error) UpdateError {
+	return UpdateError{
+		Error: Error{g},
 		Projects: []Project{
 			Project{p},
 		},
 	}
 }
 
-type Groups struct {
-	Groups []Group
+type Errors struct {
+	Errors []Error
 	Meta   struct {
 		Pagination Pagination
 	}
@@ -48,12 +48,12 @@ type Pagination struct {
 	Total int
 }
 
-func NewGroups(results models.GroupResults) Groups {
-	groups := Groups{}
-	groups.Groups = make([]Group, len(results.Groups))
+func NewErrors(results models.ErrorResults) Errors {
+	groups := Errors{}
+	groups.Errors = make([]Error, len(results.Errors))
 
-	for i, p := range results.Groups {
-		groups.Groups[i] = Group{p}
+	for i, p := range results.Errors {
+		groups.Errors[i] = Error{p}
 	}
 
 	pages := math.Ceil(float64(results.Total) / float64(results.Query.PerPageOrDefault()))

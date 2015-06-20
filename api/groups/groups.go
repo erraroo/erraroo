@@ -9,13 +9,13 @@ import (
 	"github.com/erraroo/erraroo/serializers"
 )
 
-// UpdateGroupRequest incoming update request
-type UpdateGroupRequest struct {
-	Group GroupParams
+// UpdateErrorRequest incoming update request
+type UpdateErrorRequest struct {
+	Error ErrorParams
 }
 
-// GroupParams the params that we can safely assign to a Group
-type GroupParams struct {
+// ErrorParams the params that we can safely assign to a Error
+type ErrorParams struct {
 	Resolved bool
 	Muted    bool
 }
@@ -36,32 +36,32 @@ func Index(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		return models.ErrNotFound
 	}
 
-	query := models.GroupQuery{}
+	query := models.ErrorQuery{}
 	query.PerPage = 50
 	query.ProjectID = project.ID
 	query.QueryOptions.Page = api.Page(r)
 
-	groups, err := models.Groups.FindQuery(query)
+	groups, err := models.Errors.FindQuery(query)
 	if err != nil {
 		return err
 	}
 
-	return api.JSON(w, http.StatusOK, serializers.NewGroups(groups))
+	return api.JSON(w, http.StatusOK, serializers.NewErrors(groups))
 }
 
-// Update updates the group record with an incoming UpdateGroupRequest
+// Update updates the group record with an incoming UpdateErrorRequest
 func Update(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
-	group, err := getAuthorizedGroup(r, ctx)
+	group, err := getAuthorizedError(r, ctx)
 	if err != nil {
 		return err
 	}
 
-	request := UpdateGroupRequest{}
+	request := UpdateErrorRequest{}
 	api.Decode(r, &request)
 
-	group.Muted = request.Group.Muted
-	group.Resolved = request.Group.Resolved
-	err = models.Groups.Update(group)
+	group.Muted = request.Error.Muted
+	group.Resolved = request.Error.Resolved
+	err = models.Errors.Update(group)
 	if err != nil {
 		return err
 	}
@@ -71,26 +71,26 @@ func Update(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		return err
 	}
 
-	return api.JSON(w, http.StatusOK, serializers.NewUpdateGroup(project, group))
+	return api.JSON(w, http.StatusOK, serializers.NewUpdateError(project, group))
 }
 
 // Show returns the full group
 func Show(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
-	group, err := getAuthorizedGroup(r, ctx)
+	group, err := getAuthorizedError(r, ctx)
 	if err != nil {
 		return err
 	}
 
-	return api.JSON(w, http.StatusOK, serializers.NewShowGroup(group))
+	return api.JSON(w, http.StatusOK, serializers.NewShowError(group))
 }
 
-func getAuthorizedGroup(r *http.Request, ctx *cx.Context) (*models.Group, error) {
+func getAuthorizedError(r *http.Request, ctx *cx.Context) (*models.Error, error) {
 	id, err := api.GetID(r)
 	if err != nil {
 		return nil, err
 	}
 
-	group, err := models.Groups.FindByID(id)
+	group, err := models.Errors.FindByID(id)
 	if err != nil {
 		return nil, err
 	}

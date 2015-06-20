@@ -2,8 +2,9 @@ package models
 
 import "time"
 
-type Group struct {
+type Error struct {
 	ID          int64
+	Name        string
 	Message     string
 	Checksum    string
 	Occurrences int
@@ -17,16 +18,16 @@ type Group struct {
 	WasInserted bool `db:"-"`
 }
 
-type GroupQueryResults struct {
-	Groups []*Group
+type ErrorQueryResults struct {
+	Errors []*Error
 	Total  int64
 }
 
-func newGroup(p *Project, e *Event) *Group {
-	return &Group{ProjectID: p.ID, Message: e.Message(), Checksum: e.Checksum}
+func newError(p *Project, e *Event) *Error {
+	return &Error{ProjectID: p.ID, Message: e.Message(), Checksum: e.Checksum}
 }
 
-func (g *Group) ShouldNotify() bool {
+func (g *Error) ShouldNotify() bool {
 	if g.WasInserted {
 		return true
 	}

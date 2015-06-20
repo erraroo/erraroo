@@ -92,7 +92,7 @@ func (s *projectsStore) FindByToken(token string) (*Project, error) {
 	return project, err
 }
 
-const unresolvedCount = "(select count(*) from groups where groups.project_id = projects.id and groups.resolved = 'f') as unresolved_count"
+const unresolvedCount = "(select count(*) from errors where errors.project_id = projects.id and errors.resolved = 'f') as unresolved_count"
 
 func (s *projectsStore) FindByID(id int64) (*Project, error) {
 	project := &Project{}

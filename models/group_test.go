@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGroup_ShouldNotify(t *testing.T) {
-	group := &Group{}
+func TestError_ShouldNotify(t *testing.T) {
+	group := &Error{}
 
 	ok := group.ShouldNotify()
 	assert.False(t, ok)

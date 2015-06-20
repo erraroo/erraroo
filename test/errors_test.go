@@ -44,12 +44,12 @@ func TestCreateEvent(t *testing.T) {
 	jobs.Work(_app)
 
 	// It should have created a group for the project
-	groups, err := models.Groups.FindQuery(models.GroupQuery{
+	groups, err := models.Errors.FindQuery(models.ErrorQuery{
 		ProjectID: project.ID,
 	})
 	assert.Nil(t, err)
-	assert.NotEmpty(t, groups.Groups)
-	assert.Equal(t, groups.Groups[0].Checksum, e.Checksum)
+	assert.NotEmpty(t, groups.Errors)
+	assert.Equal(t, groups.Errors[0].Checksum, e.Checksum)
 }
 
 func TestEventShow(t *testing.T) {
@@ -83,7 +83,7 @@ func TestEventShowOnlyShowsEventsOwnedByUser(t *testing.T) {
 func TestEventsByProjectId(t *testing.T) {
 	project, _ := models.Projects.Create("test project", _account.ID)
 	e, _ := models.Events.Create(project.Token, "{}")
-	group, _ := models.Groups.FindOrCreate(project, e)
+	group, _ := models.Errors.FindOrCreate(project, e)
 
 	req, res := rr("GET", fmt.Sprintf("/api/v1/errors?project_id=%d&group_id=%d", project.ID, group.ID), nil)
 	req.Header.Add("Authorization", _token)

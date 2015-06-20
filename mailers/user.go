@@ -11,8 +11,8 @@ import (
 	"github.com/erraroo/erraroo/models"
 )
 
-func DeliverNewGroupNotification(user *models.User, group *models.Group) error {
-	return notifyUser(user, newGroupEmailView(group))
+func DeliverNewErrorNotification(user *models.User, group *models.Error) error {
+	return notifyUser(user, newErrorEmailView(group))
 }
 
 type groupEmailView struct {
@@ -21,7 +21,7 @@ type groupEmailView struct {
 	Subject string
 }
 
-func newGroupEmailView(g *models.Group) groupEmailView {
+func newErrorEmailView(g *models.Error) groupEmailView {
 	return groupEmailView{
 		Subject: fmt.Sprintf("[erraroo] %s", g.Message),
 		Message: g.Message,

@@ -7,14 +7,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestErrorCreatedCreatesGroup(t *testing.T) {
+func TestErrorCreatedCreatesError(t *testing.T) {
 	_, _, project := aup(t)
 	e := makeEvent(t, project, "{}")
 
 	err := ErrorCreated(e.ID)
 	assert.Nil(t, err)
 
-	groups, err := models.Groups.FindQuery(models.GroupQuery{ProjectID: project.ID})
+	groups, err := models.Errors.FindQuery(models.ErrorQuery{ProjectID: project.ID})
 	assert.Nil(t, err)
 	assert.NotEmpty(t, groups)
 }
@@ -45,9 +45,9 @@ func TestErrorCreated_DeliversNotifcationsWhenResolved(t *testing.T) {
 	err := ErrorCreated(e.ID)
 	assert.Equal(t, 1, len(emailSender.sends))
 
-	group, err := models.Groups.FindOrCreate(project, e)
+	group, err := models.Errors.FindOrCreate(project, e)
 	group.Resolved = true
-	err = models.Groups.Update(group)
+	err = models.Errors.Update(group)
 	assert.Nil(t, err)
 
 	emailSender.Clear()
@@ -55,13 +55,13 @@ func TestErrorCreated_DeliversNotifcationsWhenResolved(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(emailSender.sends))
 
-	group, err = models.Groups.FindByID(group.ID)
+	group, err = models.Errors.FindByID(group.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, false, group.Resolved)
 
 	group.Resolved = true
 	group.Muted = true
-	err = models.Groups.Update(group)
+	err = models.Errors.Update(group)
 	assert.Nil(t, err)
 
 	emailSender.Clear()

@@ -12,10 +12,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestQueryGroups(t *testing.T) {
+func TestQueryErrors(t *testing.T) {
 	project, _ := models.Projects.Create("test project", _account.ID)
-	e, _ := models.Errors.Create(project.Token, "{}")
-	group, err := models.Groups.FindOrCreate(project, e)
+	e, _ := models.Events.Create(project.Token, "{}")
+	group, err := models.Errors.FindOrCreate(project, e)
 	assert.Nil(t, err)
 	assert.NotNil(t, group)
 
@@ -25,17 +25,17 @@ func TestQueryGroups(t *testing.T) {
 	_app.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
 
-	response := serializers.Groups{}
+	response := serializers.Errors{}
 	json.NewDecoder(res.Body).Decode(&response)
-	assert.Equal(t, len(response.Groups), 1)
+	assert.Equal(t, len(response.Errors), 1)
 	assert.Equal(t, response.Meta.Pagination.Page, 1)
 	assert.Equal(t, response.Meta.Pagination.Pages, 1)
 	assert.Equal(t, response.Meta.Pagination.Limit, 50)
 	assert.Equal(t, response.Meta.Pagination.Total, 1)
-	assert.Equal(t, response.Groups[0].ID, group.ID)
-	assert.Equal(t, response.Groups[0].Checksum, group.Checksum)
-	assert.Equal(t, response.Groups[0].Message, group.Message)
-	assert.Equal(t, response.Groups[0].ProjectID, group.ProjectID)
+	assert.Equal(t, response.Errors[0].ID, group.ID)
+	assert.Equal(t, response.Errors[0].Checksum, group.Checksum)
+	assert.Equal(t, response.Errors[0].Message, group.Message)
+	assert.Equal(t, response.Errors[0].ProjectID, group.ProjectID)
 
 	req, res = rr("GET", fmt.Sprintf("/api/v1/groups?project_id=%d", 0), nil)
 	req.Header.Add("Authorization", _token)
@@ -44,15 +44,17 @@ func TestQueryGroups(t *testing.T) {
 	assert.Equal(t, res.Code, http.StatusNotFound)
 }
 
-func TestUpdateGroups(t *testing.T) {
+func TestUpdateErrors(t *testing.T) {
 	project, _ := models.Projects.Create("test project", _account.ID)
-	e, _ := models.Errors.Create(project.Token, "{}")
-	group, err := models.Groups.FindOrCreate(project, e)
+	e, err := models.Events.Create(project.Token, "{}")
+	assert.Nil(t, err)
+
+	group, err := models.Errors.FindOrCreate(project, e)
 	assert.Nil(t, err)
 	assert.NotNil(t, group)
 
-	request := groups.UpdateGroupRequest{}
-	request.Group.Resolved = true
+	request := groups.UpdateErrorRequest{}
+	request.Error.Resolved = true
 
 	req, res := rr("PUT", fmt.Sprintf("/api/v1/groups/%d", group.ID), request)
 	req.Header.Add("Authorization", _token)
@@ -60,7 +62,7 @@ func TestUpdateGroups(t *testing.T) {
 	_app.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
 
-	response := serializers.ShowGroup{}
+	response := serializers.ShowError{}
 	json.NewDecoder(res.Body).Decode(&response)
-	assert.Equal(t, response.Group.Resolved, true)
+	assert.Equal(t, response.Error.Resolved, true)
 }
