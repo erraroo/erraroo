@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/erraroo/erraroo/api/groups"
+	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/models"
 	"github.com/erraroo/erraroo/serializers"
 	"github.com/stretchr/testify/assert"
@@ -19,7 +19,7 @@ func TestQueryErrors(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, group)
 
-	req, res := rr("GET", fmt.Sprintf("/api/v1/groups?project_id=%d", project.ID), nil)
+	req, res := rr("GET", fmt.Sprintf("/api/v1/errors?project_id=%d", project.ID), nil)
 	req.Header.Add("Authorization", _token)
 
 	_app.ServeHTTP(res, req)
@@ -37,7 +37,7 @@ func TestQueryErrors(t *testing.T) {
 	assert.Equal(t, response.Errors[0].Message, group.Message)
 	assert.Equal(t, response.Errors[0].ProjectID, group.ProjectID)
 
-	req, res = rr("GET", fmt.Sprintf("/api/v1/groups?project_id=%d", 0), nil)
+	req, res = rr("GET", fmt.Sprintf("/api/v1/errors?project_id=%d", 0), nil)
 	req.Header.Add("Authorization", _token)
 
 	_app.ServeHTTP(res, req)
@@ -53,10 +53,10 @@ func TestUpdateErrors(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, group)
 
-	request := groups.UpdateErrorRequest{}
+	request := api.UpdateErrorRequest{}
 	request.Error.Resolved = true
 
-	req, res := rr("PUT", fmt.Sprintf("/api/v1/groups/%d", group.ID), request)
+	req, res := rr("PUT", fmt.Sprintf("/api/v1/errors/%d", group.ID), request)
 	req.Header.Add("Authorization", _token)
 
 	_app.ServeHTTP(res, req)
