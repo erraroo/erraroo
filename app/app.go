@@ -8,9 +8,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/erraroo/erraroo/api"
-	"github.com/erraroo/erraroo/api/errors"
 	"github.com/erraroo/erraroo/api/events"
-	"github.com/erraroo/erraroo/api/groups"
 	"github.com/erraroo/erraroo/api/prefs"
 	"github.com/erraroo/erraroo/api/projects"
 	"github.com/erraroo/erraroo/api/sessions"
@@ -69,11 +67,11 @@ func (a *App) setupMux() {
 	a.Router.Handle("/api/v1/projects", a.AuthroziedHandler(projects.Create)).Methods("POST")
 	a.Router.Handle("/api/v1/projects/{id}", a.AuthroziedHandler(projects.Show)).Methods("GET")
 	a.Router.Handle("/api/v1/projects/{id}", a.AuthroziedHandler(projects.Update)).Methods("PUT")
-	a.Router.Handle("/api/v1/errors/{id}", a.AuthroziedHandler(errors.Show)).Methods("GET")
-	a.Router.Handle("/api/v1/errors", a.AuthroziedHandler(errors.Index)).Methods("GET")
-	a.Router.Handle("/api/v1/groups", a.AuthroziedHandler(groups.Index)).Methods("GET")
-	a.Router.Handle("/api/v1/groups/{id}", a.AuthroziedHandler(groups.Show)).Methods("GET")
-	a.Router.Handle("/api/v1/groups/{id}", a.AuthroziedHandler(groups.Update)).Methods("PUT")
+	a.Router.Handle("/api/v1/events/{id}", a.AuthroziedHandler(events.Show)).Methods("GET")
+	a.Router.Handle("/api/v1/events", a.AuthroziedHandler(events.Index)).Methods("GET")
+	a.Router.Handle("/api/v1/errors", a.AuthroziedHandler(api.IndexErrors)).Methods("GET")
+	a.Router.Handle("/api/v1/errors/{id}", a.AuthroziedHandler(api.ShowError)).Methods("GET")
+	a.Router.Handle("/api/v1/errors/{id}", a.AuthroziedHandler(api.UpdateError)).Methods("PUT")
 	a.Router.Handle("/api/v1/users/{id}", a.AuthroziedHandler(api.MeHandler)).Methods("GET")
 	a.Router.Handle("/api/v1/prefs/{id}", a.AuthroziedHandler(prefs.Update)).Methods("PUT")
 	a.Router.Handle("/api/v1/timings", a.AuthroziedHandler(timings.Index)).Methods("GET")

@@ -1,9 +1,8 @@
-package groups
+package api
 
 import (
 	"net/http"
 
-	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/cx"
 	"github.com/erraroo/erraroo/models"
 	"github.com/erraroo/erraroo/serializers"
@@ -20,9 +19,9 @@ type ErrorParams struct {
 	Muted    bool
 }
 
-// Index returns the paginated groups filtered by a project_id
-func Index(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
-	projectID, err := api.QueryToID(r, "project_id")
+// IndexErrors returns the paginated errors filtered by a project_id
+func IndexErrors(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
+	projectID, err := QueryToID(r, "project_id")
 	if err != nil {
 		return err
 	}
@@ -39,25 +38,25 @@ func Index(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	query := models.ErrorQuery{}
 	query.PerPage = 50
 	query.ProjectID = project.ID
-	query.QueryOptions.Page = api.Page(r)
+	query.QueryOptions.Page = Page(r)
 
 	groups, err := models.Errors.FindQuery(query)
 	if err != nil {
 		return err
 	}
 
-	return api.JSON(w, http.StatusOK, serializers.NewErrors(groups))
+	return JSON(w, http.StatusOK, serializers.NewErrors(groups))
 }
 
-// Update updates the group record with an incoming UpdateErrorRequest
-func Update(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
+// UpdateError updates the error record with an incoming UpdateErrorRequest
+func UpdateError(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	group, err := getAuthorizedError(r, ctx)
 	if err != nil {
 		return err
 	}
 
 	request := UpdateErrorRequest{}
-	api.Decode(r, &request)
+	Decode(r, &request)
 
 	group.Muted = request.Error.Muted
 	group.Resolved = request.Error.Resolved
@@ -71,21 +70,21 @@ func Update(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		return err
 	}
 
-	return api.JSON(w, http.StatusOK, serializers.NewUpdateError(project, group))
+	return JSON(w, http.StatusOK, serializers.NewUpdateError(project, group))
 }
 
 // Show returns the full group
-func Show(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
+func ShowError(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	group, err := getAuthorizedError(r, ctx)
 	if err != nil {
 		return err
 	}
 
-	return api.JSON(w, http.StatusOK, serializers.NewShowError(group))
+	return JSON(w, http.StatusOK, serializers.NewShowError(group))
 }
 
 func getAuthorizedError(r *http.Request, ctx *cx.Context) (*models.Error, error) {
-	id, err := api.GetID(r)
+	id, err := GetID(r)
 	if err != nil {
 		return nil, err
 	}
