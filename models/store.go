@@ -24,6 +24,7 @@ var (
 	Accounts AccountsStore
 	Errors   ErrorsStore
 	Groups   GroupsStore
+	Plans    PlansStore
 	Prefs    PrefsStore
 	Projects ProjectsStore
 	Timings  TimingsStore

@@ -23,13 +23,13 @@ func TestCreateError(t *testing.T) {
 	project, _ := models.Projects.Create("test project", _account.ID)
 
 	request := events.CreateEventRequest{
-		Token: project.Token,
-		Kind:  "js.error",
+		Kind: "js.error",
 		Data: map[string]interface{}{
 			"message": "error thrown",
 		},
 	}
 	req, res := rr("POST", "/api/v1/events", request)
+	req.Header.Set("X-Token", project.Token)
 	_app.ServeHTTP(res, req)
 
 	assert.Equal(t, http.StatusCreated, res.Code)
