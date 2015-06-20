@@ -32,20 +32,23 @@ create table projects (
 create unique index projects_token_unique on projects using btree(token);
 create index project_account_ids on projects using btree(account_id);
 
-create table errors (
+create table events (
   id         bigserial not null primary key,
-  payload    json,
   checksum   text not null,
+  kind       text not null,
+  payload    json,
   project_id bigint references projects(id) NOT NULL,
   created_at timestamp without time zone NOT NULL DEFAULT now(),
   updated_at timestamp without time zone NOT NULL DEFAULT now()
 );
 
-create index errors_project_id on errors (project_id);
-create index errors_checksum on errors (checksum);
+create index events_project_id on events (project_id);
+create index events_checksum on events (checksum);
+create index events_kind on events (kind);
 
-create table groups (
+create table errors (
   id bigserial not null primary key,
+  name text not null default 'Error',
   message text not null,
   checksum text not null,
   occurrences integer not null default 0,
@@ -57,9 +60,9 @@ create table groups (
   updated_at timestamp without time zone not null default now()
 );
 
-create unique index groups_project_id_checksum_idx on groups(project_id, checksum);
-create index groups_project_id_idx on groups(project_id);
-create index groups_checksum_idx on groups(checksum);
+create unique index errors_project_id_checksum_idx on errors(project_id, checksum);
+create index errors_project_id_idx on errors(project_id);
+create index errors_checksum_idx on errors(checksum);
 
 create table timings (
   id         bigserial not null primary key,

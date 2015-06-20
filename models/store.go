@@ -22,7 +22,7 @@ var (
 
 	store    *Store
 	Accounts AccountsStore
-	Errors   ErrorsStore
+	Events   EventsStore
 	Groups   GroupsStore
 	Plans    PlansStore
 	Prefs    PrefsStore

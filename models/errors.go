@@ -5,35 +5,36 @@ import (
 	"time"
 )
 
-// ErrorsStore is the interface to error data
-type ErrorsStore interface {
-	Create(token, data string) (*Error, error)
-	ListForProject(*Project) ([]*Error, error)
-	FindByID(int64) (*Error, error)
-	FindQuery(ErrorQuery) (ErrorResults, error)
-	Update(*Error) error
+// EventsStore is the interface to error data
+type EventsStore interface {
+	Create(token, data string) (*Event, error)
+	ListForProject(*Project) ([]*Event, error)
+	FindByID(int64) (*Event, error)
+	FindQuery(EventQuery) (EventResults, error)
+	Update(*Event) error
 }
 
-type errorsStore struct{ *Store }
+type eventsStore struct{ *Store }
 
-func (s *errorsStore) Create(token, data string) (*Error, error) {
+func (s *eventsStore) Create(token, data string) (*Event, error) {
 	project, err := Projects.FindByToken(token)
 	if err != nil {
 		return nil, err
 	}
 
-	e := &Error{}
+	e := &Event{}
 	e.Payload = data
 	e.ProjectID = project.ID
 	e.CreatedAt = time.Now().UTC()
 	e.UpdatedAt = e.CreatedAt
 	e.generateChecksum()
 
-	query := "insert into errors (payload, project_id, checksum, created_at, updated_at) values ($1,$2,$3,$4,$5) returning id"
+	query := "insert into events (payload, project_id, checksum, kind, created_at, updated_at) values ($1,$2,$3,$4,$5,$6) returning id"
 	row := s.QueryRow(query,
 		e.Payload,
 		e.ProjectID,
 		e.Checksum,
+		e.Kind,
 		e.CreatedAt,
 		e.UpdatedAt,
 	)
@@ -41,21 +42,21 @@ func (s *errorsStore) Create(token, data string) (*Error, error) {
 	return e, row.Scan(&e.ID)
 }
 
-func (s *errorsStore) ListForProject(p *Project) ([]*Error, error) {
-	query := "select * from errors where project_id = $1 order by created_at desc limit 100"
-	errors := []*Error{}
-	err := s.Select(&errors, query, p.ID)
-	return errors, err
+func (s *eventsStore) ListForProject(p *Project) ([]*Event, error) {
+	query := "select * from events where project_id = $1 order by created_at desc limit 100"
+	events := []*Event{}
+	err := s.Select(&events, query, p.ID)
+	return events, err
 }
 
-func (s *errorsStore) FindByID(id int64) (*Error, error) {
-	e := &Error{}
-	query := "select * from errors where id = $1 limit 1"
+func (s *eventsStore) FindByID(id int64) (*Event, error) {
+	e := &Event{}
+	query := "select * from events where id = $1 limit 1"
 	return e, s.Get(e, query, id)
 }
 
-func (s *errorsStore) Update(e *Error) error {
-	query := "update errors set payload=$1 where id = $2"
+func (s *eventsStore) Update(e *Event) error {
+	query := "update events set payload=$1 where id = $2"
 
 	_, err := s.Exec(query, e.Payload, e.ID)
 	if err != nil {
@@ -66,25 +67,25 @@ func (s *errorsStore) Update(e *Error) error {
 	return nil
 }
 
-type ErrorQuery struct {
+type EventQuery struct {
 	ProjectID int64
 	Checksum  string
 	QueryOptions
 }
 
-type ErrorResults struct {
-	Errors []*Error
+type EventResults struct {
+	Events []*Event
 	Total  int64
-	Query  ErrorQuery
+	Query  EventQuery
 }
 
-func (s *errorsStore) FindQuery(q ErrorQuery) (ErrorResults, error) {
-	errs := ErrorResults{}
+func (s *eventsStore) FindQuery(q EventQuery) (EventResults, error) {
+	errs := EventResults{}
 	errs.Query = q
-	errs.Errors = []*Error{}
+	errs.Events = []*Event{}
 
-	countQuery := builder.Select("count(*)").From("errors")
-	findQuery := builder.Select("*").From("errors")
+	countQuery := builder.Select("count(*)").From("events")
+	findQuery := builder.Select("*").From("events")
 
 	countQuery = countQuery.Where("project_id=?", q.ProjectID)
 	findQuery = findQuery.Where("project_id=?", q.ProjectID)
@@ -98,7 +99,7 @@ func (s *errorsStore) FindQuery(q ErrorQuery) (ErrorResults, error) {
 	findQuery = findQuery.OrderBy("created_at desc")
 
 	query, args, _ := findQuery.ToSql()
-	err := s.Select(&errs.Errors, query, args...)
+	err := s.Select(&errs.Events, query, args...)
 	if err != nil {
 		return errs, err
 	}

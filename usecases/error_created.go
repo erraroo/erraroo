@@ -6,28 +6,28 @@ import (
 	"github.com/erraroo/erraroo/models"
 )
 
-func ErrorCreated(errorID int64) error {
-	e, err := models.Errors.FindByID(errorID)
+func ErrorCreated(eventID int64) error {
+	e, err := models.Events.FindByID(eventID)
 	if err != nil {
 		return err
 	}
 
-	err = processError(e)
+	err = processEvent(e)
 	if err != nil {
 		return err
 	}
 
-	return afterErrorProcessed(e)
+	return afterEventProcessed(e)
 }
 
-func processError(e *models.Error) error {
+func processEvent(e *models.Event) error {
 	resources := models.NewResourceStore()
 
 	err := e.PopulateStackContext(resources)
 	if err != nil {
 		logger.Error("populating stack context", "err", err, "error.ID", e.ID)
 	} else {
-		err = models.Errors.Update(e)
+		err = models.Events.Update(e)
 		if err != nil {
 			logger.Error("updating error", "err", err, "error", e.ID)
 			return err
@@ -37,7 +37,7 @@ func processError(e *models.Error) error {
 	return nil
 }
 
-func afterErrorProcessed(e *models.Error) error {
+func afterEventProcessed(e *models.Event) error {
 	p, err := models.Projects.FindByID(e.ProjectID)
 	if err != nil {
 		return err

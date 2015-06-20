@@ -15,7 +15,7 @@ func Show(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		return err
 	}
 
-	e, err := models.Errors.FindByID(id)
+	e, err := models.Events.FindByID(id)
 	if err != nil {
 		return err
 	}
@@ -29,7 +29,7 @@ func Show(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		return models.ErrNotFound
 	}
 
-	return api.JSON(w, http.StatusOK, serializers.NewShowError(e))
+	return api.JSON(w, http.StatusOK, serializers.NewShowEvent(e))
 }
 
 func Index(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
@@ -47,7 +47,7 @@ func Index(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		return models.ErrNotFound
 	}
 
-	errs, err := models.Errors.FindQuery(models.ErrorQuery{
+	events, err := models.Events.FindQuery(models.EventQuery{
 		Checksum:     r.URL.Query().Get("checksum"),
 		ProjectID:    project.ID,
 		QueryOptions: api.QueryOptions(r),
@@ -57,5 +57,5 @@ func Index(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		return err
 	}
 
-	return api.JSON(w, http.StatusOK, serializers.NewErrors(errs))
+	return api.JSON(w, http.StatusOK, serializers.NewEvents(events))
 }

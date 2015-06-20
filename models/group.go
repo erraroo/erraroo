@@ -22,7 +22,7 @@ type GroupQueryResults struct {
 	Total  int64
 }
 
-func newGroup(p *Project, e *Error) *Group {
+func newGroup(p *Project, e *Event) *Group {
 	return &Group{ProjectID: p.ID, Message: e.Message(), Checksum: e.Checksum}
 }
 

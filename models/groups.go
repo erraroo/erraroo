@@ -7,9 +7,9 @@ import (
 	"github.com/erraroo/erraroo/logger"
 )
 
-// ErrorsStore is the interface to error data
+// EventsStore is the interface to error data
 type GroupsStore interface {
-	FindOrCreate(*Project, *Error) (*Group, error)
+	FindOrCreate(*Project, *Event) (*Group, error)
 	FindQuery(GroupQuery) (GroupResults, error)
 	FindByID(int64) (*Group, error)
 	Update(*Group) error
@@ -29,7 +29,7 @@ type GroupResults struct {
 }
 type groupsStore struct{ *Store }
 
-func (s *groupsStore) FindOrCreate(p *Project, e *Error) (*Group, error) {
+func (s *groupsStore) FindOrCreate(p *Project, e *Event) (*Group, error) {
 	group, err := s.findByProjectIDAndChecksum(p.ID, e.Checksum)
 	if err == ErrNotFound {
 		group = newGroup(p, e)

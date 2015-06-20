@@ -9,7 +9,7 @@ import (
 
 func TestErrorCreatedCreatesGroup(t *testing.T) {
 	_, _, project := aup(t)
-	e := makeError(t, project, "{}")
+	e := makeEvent(t, project, "{}")
 
 	err := ErrorCreated(e.ID)
 	assert.Nil(t, err)
@@ -22,7 +22,7 @@ func TestErrorCreatedCreatesGroup(t *testing.T) {
 func TestErrorCreated_DeliversNotifcations(t *testing.T) {
 	emailSender.Clear()
 	_, user, project := aup(t)
-	e := makeError(t, project, "{}")
+	e := makeEvent(t, project, "{}")
 
 	err := ErrorCreated(e.ID)
 	assert.Nil(t, err)
@@ -40,7 +40,7 @@ func TestErrorCreated_DeliversNotifcationsWhenResolved(t *testing.T) {
 	emailSender.Clear()
 
 	_, _, project := aup(t)
-	e := makeError(t, project, "{}")
+	e := makeEvent(t, project, "{}")
 
 	err := ErrorCreated(e.ID)
 	assert.Equal(t, 1, len(emailSender.sends))
@@ -74,7 +74,7 @@ func TestErrorCreated_DoesNotDeliverNotifcationsToUsersThatDoNotWantThem(t *test
 	emailSender.Clear()
 
 	_, user, project := aup(t)
-	e := makeError(t, project, "{}")
+	e := makeEvent(t, project, "{}")
 	pref, err := models.Prefs.Get(user)
 	assert.Nil(t, err)
 	assert.NotNil(t, pref)

@@ -19,7 +19,7 @@ func TestCreateAccount(t *testing.T) {
 	assert.False(t, 0 == account.ID, "should not be 0")
 }
 
-func TestCreateError(t *testing.T) {
+func TestCreateEvent(t *testing.T) {
 	project, _ := models.Projects.Create("test project", _account.ID)
 
 	request := events.CreateEventRequest{
@@ -34,7 +34,7 @@ func TestCreateError(t *testing.T) {
 
 	assert.Equal(t, http.StatusCreated, res.Code)
 
-	errors, err := models.Errors.ListForProject(project)
+	errors, err := models.Events.ListForProject(project)
 	assert.Nil(t, err)
 	assert.NotEmpty(t, errors)
 
@@ -52,9 +52,9 @@ func TestCreateError(t *testing.T) {
 	assert.Equal(t, groups.Groups[0].Checksum, e.Checksum)
 }
 
-func TestErrorShow(t *testing.T) {
+func TestEventShow(t *testing.T) {
 	project, _ := models.Projects.Create("test project", _account.ID)
-	e, _ := models.Errors.Create(project.Token, "{}")
+	e, _ := models.Events.Create(project.Token, "{}")
 
 	req, res := rr("GET", fmt.Sprintf("/api/v1/errors/%d", e.ID), nil)
 	req.Header.Add("Authorization", _token)
@@ -62,17 +62,17 @@ func TestErrorShow(t *testing.T) {
 	_app.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
 
-	response := serializers.ShowError{}
+	response := serializers.ShowEvent{}
 	json.NewDecoder(res.Body).Decode(&response)
-	assert.Equal(t, e.ID, response.Error.ID)
-	assert.Equal(t, e.Payload, response.Error.Payload)
-	assert.Equal(t, e.Checksum, response.Error.Checksum)
+	assert.Equal(t, e.ID, response.Event.ID)
+	assert.Equal(t, e.Payload, response.Event.Payload)
+	assert.Equal(t, e.Checksum, response.Event.Checksum)
 }
 
-func TestErrorShowOnlyShowsErrorsOwnedByUser(t *testing.T) {
+func TestEventShowOnlyShowsEventsOwnedByUser(t *testing.T) {
 	account2, _ := models.Accounts.Create()
 	project, _ := models.Projects.Create("test project", account2.ID)
-	e, _ := models.Errors.Create(project.Token, "{}")
+	e, _ := models.Events.Create(project.Token, "{}")
 
 	req, res := rr("GET", fmt.Sprintf("/api/v1/errors/%d", e.ID), nil)
 	req.Header.Add("Authorization", _token)
@@ -80,9 +80,9 @@ func TestErrorShowOnlyShowsErrorsOwnedByUser(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, res.Code)
 }
 
-func TestErrorsByProjectId(t *testing.T) {
+func TestEventsByProjectId(t *testing.T) {
 	project, _ := models.Projects.Create("test project", _account.ID)
-	e, _ := models.Errors.Create(project.Token, "{}")
+	e, _ := models.Events.Create(project.Token, "{}")
 	group, _ := models.Groups.FindOrCreate(project, e)
 
 	req, res := rr("GET", fmt.Sprintf("/api/v1/errors?project_id=%d&group_id=%d", project.ID, group.ID), nil)
@@ -91,9 +91,9 @@ func TestErrorsByProjectId(t *testing.T) {
 	_app.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
 
-	response := serializers.Errors{}
+	response := serializers.Events{}
 	json.NewDecoder(res.Body).Decode(&response)
-	assert.Equal(t, len(response.Errors), 1)
-	assert.Equal(t, e.Payload, response.Errors[0].Payload)
-	assert.Equal(t, e.Checksum, response.Errors[0].Checksum)
+	assert.Equal(t, len(response.Events), 1)
+	assert.Equal(t, e.Payload, response.Events[0].Payload)
+	assert.Equal(t, e.Checksum, response.Events[0].Checksum)
 }

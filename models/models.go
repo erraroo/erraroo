@@ -14,7 +14,7 @@ func Setup(config string) error {
 	}
 
 	Accounts = &accountsStore{store}
-	Errors = &errorsStore{store}
+	Events = &eventsStore{store}
 	Groups = &groupsStore{store}
 	Plans = &plansStore{store}
 	Prefs = &prefsStore{store}

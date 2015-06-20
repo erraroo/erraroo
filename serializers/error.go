@@ -6,33 +6,33 @@ import (
 	"github.com/erraroo/erraroo/models"
 )
 
-type Error struct {
-	*models.Error
+type Event struct {
+	*models.Event
 }
 
-type ShowError struct {
-	Error Error
+type ShowEvent struct {
+	Event Event
 }
 
-func NewShowError(p *models.Error) ShowError {
-	return ShowError{
-		Error: Error{p},
+func NewShowEvent(p *models.Event) ShowEvent {
+	return ShowEvent{
+		Event: Event{p},
 	}
 }
 
-type Errors struct {
-	Errors []Error
+type Events struct {
+	Events []Event
 	Meta   struct {
 		Pagination Pagination
 	}
 }
 
-func NewErrors(results models.ErrorResults) Errors {
-	e := Errors{}
-	e.Errors = make([]Error, len(results.Errors))
+func NewEvents(results models.EventResults) Events {
+	e := Events{}
+	e.Events = make([]Event, len(results.Events))
 
-	for i, p := range results.Errors {
-		e.Errors[i] = Error{p}
+	for i, p := range results.Events {
+		e.Events[i] = Event{p}
 	}
 
 	pages := math.Ceil(float64(results.Total) / float64(results.Query.PerPageOrDefault()))

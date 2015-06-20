@@ -55,7 +55,7 @@ func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 
 	switch request.Kind {
 	case "js.error":
-		e, err := models.Errors.Create(token, data)
+		e, err := models.Events.Create(token, data)
 		if err == models.ErrNotFound {
 			w.WriteHeader(http.StatusBadRequest)
 			return nil

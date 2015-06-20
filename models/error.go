@@ -8,17 +8,18 @@ import (
 	"time"
 )
 
-// Error is the entity that stores error data
-type Error struct {
+// Event is the entity that stores error data
+type Event struct {
 	ID        int64
 	Payload   string
 	Checksum  string
+	Kind      string
 	ProjectID int64     `db:"project_id"`
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
 }
 
-type jsError struct {
+type jsEvent struct {
 	Language  string    `json:"language"`
 	Libaries  []library `json:"libaries"`
 	Plugins   []plugin  `json:"plugins"`
@@ -63,14 +64,14 @@ type SourceContext struct {
 	OrigFile    string   `json:"origFile"`
 }
 
-func (e Error) unmarshalJSError() (jsError, error) {
-	var js jsError
+func (e Event) unmarshalJSEvent() (jsEvent, error) {
+	var js jsEvent
 	err := json.Unmarshal([]byte(e.Payload), &js)
 	return js, err
 }
 
-func (e *Error) generateChecksum() {
-	js, _ := e.unmarshalJSError()
+func (e *Event) generateChecksum() {
+	js, _ := e.unmarshalJSEvent()
 
 	h := md5.New()
 	io.WriteString(h, fmt.Sprintf("%d", e.ProjectID))
@@ -79,8 +80,8 @@ func (e *Error) generateChecksum() {
 	e.Checksum = fmt.Sprintf("%x", h.Sum(nil))
 }
 
-func (e *Error) PopulateStackContext(resources *resourcesStore) error {
-	jse, err := e.unmarshalJSError()
+func (e *Event) PopulateStackContext(resources *resourcesStore) error {
+	jse, err := e.unmarshalJSEvent()
 	if err != nil {
 		return err
 	}
@@ -112,7 +113,7 @@ func populateFrameContext(f *frame, resources *resourcesStore) error {
 	return nil
 }
 
-func (e *Error) Message() string {
-	jse, _ := e.unmarshalJSError()
+func (e *Event) Message() string {
+	jse, _ := e.unmarshalJSEvent()
 	return jse.Trace.Message
 }

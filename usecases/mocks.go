@@ -60,8 +60,8 @@ func user(t *testing.T, account *models.Account) *models.User {
 	return user
 }
 
-func makeError(t *testing.T, project *models.Project, payload string) *models.Error {
-	e, err := models.Errors.Create(project.Token, payload)
+func makeEvent(t *testing.T, project *models.Project, payload string) *models.Event {
+	e, err := models.Events.Create(project.Token, payload)
 	assert.Nil(t, err)
 	assert.NotNil(t, e)
 	return e
