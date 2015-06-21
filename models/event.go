@@ -39,6 +39,8 @@ func (e *Event) handler() EventHandler {
 		return &jsErrorEvent{e}
 	case "js.timing":
 		return &jsTimingEvent{e}
+	case "js.log":
+		return &jsLogEvent{e}
 	}
 
 	return nil

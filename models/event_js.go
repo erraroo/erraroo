@@ -159,3 +159,30 @@ func (e *jsTimingEvent) Name() string {
 func (e *jsTimingEvent) Message() string {
 	return "timing event recorded"
 }
+
+type jsLogEvent struct{ *Event }
+
+func (e *jsLogEvent) IsAsync() bool {
+	return false
+}
+
+func (e *jsLogEvent) PreProcess() error {
+	logger.Info("js.log", "payload", e.Payload)
+	return nil
+}
+
+func (e *jsLogEvent) PostProcess() error {
+	return nil
+}
+
+func (e *jsLogEvent) Checksum() string {
+	return ""
+}
+
+func (e *jsLogEvent) Name() string {
+	return "log event"
+}
+
+func (e *jsLogEvent) Message() string {
+	return "log event"
+}
