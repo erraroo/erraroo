@@ -21,9 +21,7 @@ func ErrorCreated(eventID int64) error {
 }
 
 func processEvent(e *models.Event) error {
-	resources := models.NewResourceStore()
-
-	err := e.PopulateStackContext(resources)
+	err := e.PostProcess()
 	if err != nil {
 		logger.Error("populating stack context", "err", err, "error.ID", e.ID)
 	} else {

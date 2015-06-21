@@ -14,7 +14,7 @@ import (
 
 func TestQueryErrors(t *testing.T) {
 	project, _ := models.Projects.Create("test project", _account.ID)
-	e, _ := models.Events.Create(project.Token, "{}")
+	e, _ := models.Events.Create(project.Token, "js.error", "{}")
 	group, err := models.Errors.FindOrCreate(project, e)
 	assert.Nil(t, err)
 	assert.NotNil(t, group)
@@ -46,7 +46,7 @@ func TestQueryErrors(t *testing.T) {
 
 func TestUpdateErrors(t *testing.T) {
 	project, _ := models.Projects.Create("test project", _account.ID)
-	e, err := models.Events.Create(project.Token, "{}")
+	e, err := models.Events.Create(project.Token, "js.error", "{}")
 	assert.Nil(t, err)
 
 	group, err := models.Errors.FindOrCreate(project, e)

@@ -80,7 +80,7 @@ func (a *App) setupMux() {
 
 func (a *App) setupQueue() {
 	a.JobRouter = rsq.NewJobRouter()
-	a.JobRouter.Handle("create.error", a.JobHandler(jobs.AfterCreateError))
+	a.JobRouter.Handle("event.process", a.JobHandler(jobs.EventProcess))
 }
 
 func (a *App) newContext(r *http.Request) (*cx.Context, error) {

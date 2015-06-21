@@ -6,21 +6,16 @@ import (
 )
 
 type TimingsStore interface {
-	Create(token, data string) (*Timing, error)
+	Create(project *Project, data string) (*Timing, error)
 	Update(*Timing) error
 	Last7Days(*Project) ([]*Timing, error)
 }
 
 type timingsStore struct{ *Store }
 
-func (s *timingsStore) Create(token, data string) (*Timing, error) {
-	project, err := Projects.FindByToken(token)
-	if err != nil {
-		return nil, err
-	}
-
+func (s *timingsStore) Create(project *Project, data string) (*Timing, error) {
 	timing := &Timing{}
-	err = s.Get(timing, "select * from timings where project_id=$1 and created_at=date_trunc('minute', now());",
+	err := s.Get(timing, "select * from timings where project_id=$1 and created_at=date_trunc('minute', now());",
 		project.ID,
 	)
 

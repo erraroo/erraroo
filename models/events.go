@@ -3,11 +3,13 @@ package models
 import (
 	"log"
 	"time"
+
+	"github.com/erraroo/erraroo/logger"
 )
 
 // EventsStore is the interface to error data
 type EventsStore interface {
-	Create(token, data string) (*Event, error)
+	Create(token, kind, data string) (*Event, error)
 	ListForProject(*Project) ([]*Event, error)
 	FindByID(int64) (*Event, error)
 	FindQuery(EventQuery) (EventResults, error)
@@ -16,18 +18,25 @@ type EventsStore interface {
 
 type eventsStore struct{ *Store }
 
-func (s *eventsStore) Create(token, data string) (*Event, error) {
+func (s *eventsStore) Create(token, kind, data string) (*Event, error) {
+	var err error
 	project, err := Projects.FindByToken(token)
 	if err != nil {
 		return nil, err
 	}
 
 	e := &Event{}
+	e.Kind = kind
 	e.Payload = data
 	e.ProjectID = project.ID
 	e.CreatedAt = time.Now().UTC()
 	e.UpdatedAt = e.CreatedAt
-	e.generateChecksum()
+
+	err = e.PreProcess()
+	if err != nil {
+		logger.Error("error pre processing event", "kind", kind, "payload", data, "token", token, "err", err)
+		return nil, err
+	}
 
 	query := "insert into events (payload, project_id, checksum, kind, created_at, updated_at) values ($1,$2,$3,$4,$5,$6) returning id"
 	row := s.QueryRow(query,
@@ -39,7 +48,9 @@ func (s *eventsStore) Create(token, data string) (*Event, error) {
 		e.UpdatedAt,
 	)
 
-	return e, row.Scan(&e.ID)
+	err = row.Scan(&e.ID)
+
+	return e, err
 }
 
 func (s *eventsStore) ListForProject(p *Project) ([]*Event, error) {

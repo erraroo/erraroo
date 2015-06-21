@@ -54,7 +54,7 @@ func TestCreateEvent(t *testing.T) {
 
 func TestEventShow(t *testing.T) {
 	project, _ := models.Projects.Create("test project", _account.ID)
-	e, _ := models.Events.Create(project.Token, "{}")
+	e, _ := models.Events.Create(project.Token, "js.error", "{}")
 
 	req, res := rr("GET", fmt.Sprintf("/api/v1/events/%d", e.ID), nil)
 	req.Header.Add("Authorization", _token)
@@ -72,7 +72,7 @@ func TestEventShow(t *testing.T) {
 func TestEventShowOnlyShowsEventsOwnedByUser(t *testing.T) {
 	account2, _ := models.Accounts.Create()
 	project, _ := models.Projects.Create("test project", account2.ID)
-	e, _ := models.Events.Create(project.Token, "{}")
+	e, _ := models.Events.Create(project.Token, "js.error", "{}")
 
 	req, res := rr("GET", fmt.Sprintf("/api/v1/events/%d", e.ID), nil)
 	req.Header.Add("Authorization", _token)
@@ -82,7 +82,7 @@ func TestEventShowOnlyShowsEventsOwnedByUser(t *testing.T) {
 
 func TestEventsByProjectId(t *testing.T) {
 	project, _ := models.Projects.Create("test project", _account.ID)
-	e, _ := models.Events.Create(project.Token, "{}")
+	e, _ := models.Events.Create(project.Token, "js.error", "{}")
 	group, _ := models.Errors.FindOrCreate(project, e)
 
 	req, res := rr("GET", fmt.Sprintf("/api/v1/events?project_id=%d&group_id=%d", project.ID, group.ID), nil)

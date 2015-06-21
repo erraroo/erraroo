@@ -26,7 +26,7 @@ func Shutdown() error {
 	return queue.Shutdown()
 }
 
-func AfterCreateError(job *rsq.Job, ctx *cx.Context) error {
+func EventProcess(job *rsq.Job, ctx *cx.Context) error {
 	var id int64
 	err := json.Unmarshal(job.Payload, &id)
 	if err != nil {

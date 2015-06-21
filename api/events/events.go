@@ -54,39 +54,26 @@ func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	}
 	data := string(payload)
 
-	switch request.Kind {
-	case "js.error":
-		e, err := models.Events.Create(token, data)
-		if err == models.ErrNotFound {
-			w.WriteHeader(http.StatusBadRequest)
-			return nil
-		}
+	event, err := models.Events.Create(token, request.Kind, data)
+	if err == models.ErrNotFound {
+		w.WriteHeader(http.StatusBadRequest)
+		return nil
+	}
 
+	if err != nil {
+		return err
+	}
+
+	if event.IsAsync() {
+		payload, err := json.Marshal(event.ID)
 		if err != nil {
 			return err
 		}
 
-		payload, err := json.Marshal(e.ID)
+		err = jobs.Push("event.process", payload)
 		if err != nil {
 			return err
 		}
-
-		err = jobs.Push("create.error", payload)
-		if err != nil {
-			return err
-		}
-	case "js.timing":
-		_, err := models.Timings.Create(token, data)
-		if err == models.ErrNotFound {
-			w.WriteHeader(http.StatusBadRequest)
-			return nil
-		}
-
-		if err != nil {
-			return err
-		}
-	case "js.log":
-		logger.Info("js.log", "payload", data)
 	}
 
 	w.WriteHeader(http.StatusCreated)
