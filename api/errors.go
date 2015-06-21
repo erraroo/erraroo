@@ -38,6 +38,7 @@ func IndexErrors(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error 
 	query := models.ErrorQuery{}
 	query.PerPage = 50
 	query.ProjectID = project.ID
+	query.Status = r.URL.Query().Get("status")
 	query.QueryOptions.Page = Page(r)
 
 	groups, err := models.Errors.FindQuery(query)

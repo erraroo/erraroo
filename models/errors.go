@@ -18,7 +18,7 @@ type ErrorsStore interface {
 
 type ErrorQuery struct {
 	ProjectID int64
-	Resolved  bool
+	Status    string
 	QueryOptions
 }
 
@@ -109,9 +109,24 @@ func (s *errorsStore) FindQuery(q ErrorQuery) (ErrorResults, error) {
 	countQuery = countQuery.Where("project_id=?", q.ProjectID)
 	findQuery = findQuery.Where("project_id=?", q.ProjectID)
 
+	if q.Status == "unresolved" {
+		countQuery = countQuery.Where("resolved=? AND muted=?", false, false)
+		findQuery = findQuery.Where("resolved=? AND muted=?", false, false)
+	}
+
+	if q.Status == "resolved" {
+		countQuery = countQuery.Where("resolved=? AND muted=?", true, false)
+		findQuery = findQuery.Where("resolved=? AND muted=?", true, false)
+	}
+
+	if q.Status == "muted" {
+		countQuery = countQuery.Where("muted=?", true)
+		findQuery = findQuery.Where("muted=?", true)
+	}
+
 	findQuery = findQuery.Limit(uint64(q.PerPageOrDefault())).Offset(uint64(q.Offset()))
 
-	findQuery = findQuery.OrderBy("last_seen_at desc, created_at desc")
+	findQuery = findQuery.OrderBy("last_seen_at desc")
 
 	query, args, _ := findQuery.ToSql()
 	err := s.Select(&errors.Errors, query, args...)
