@@ -25,7 +25,7 @@ func newErrorEmailView(g *models.Error) groupEmailView {
 	return groupEmailView{
 		Subject: fmt.Sprintf("[erraroo] %s", g.Message),
 		Message: g.Message,
-		URL:     fmt.Sprintf("%s/projects/%d/groups/%d/errors/latest", config.MailerBaseURL, g.ProjectID, g.ID),
+		URL:     fmt.Sprintf("%s/projects/%d/errors/%d/events/latest", config.MailerBaseURL, g.ProjectID, g.ID),
 	}
 }
 
