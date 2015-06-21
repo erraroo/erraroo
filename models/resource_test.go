@@ -32,6 +32,16 @@ func TestResourceSourceMapURL(t *testing.T) {
 			"//# sourceMappingURL=/assets/vendor.map",
 			"https://xxx.cloudfront.com/assets/vendor.map",
 		},
+		{
+			"https://xxx.cloudfront.com/assets/vendor.js",
+			"//# sourceMappingURL=http://example.com/assets/vendor.map",
+			"http://example.com/assets/vendor.map",
+		},
+		{
+			"https://xxx.cloudfront.com/assets/vendor.js",
+			"//# sourceMappingURL=https://example.com/assets/vendor.map",
+			"https://example.com/assets/vendor.map",
+		},
 	}
 
 	for _, example := range examples {

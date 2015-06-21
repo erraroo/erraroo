@@ -42,12 +42,16 @@ func (r *Resource) SourceMapURL() string {
 }
 
 func (r *Resource) buildSourceMapURL(mappingURL string) string {
+	if strings.HasPrefix(mappingURL, "http") {
+		return mappingURL
+	}
+
+	if strings.HasPrefix(mappingURL, "/") {
+		return r.baseURL() + mappingURL[1:]
+	}
+
 	if strings.Contains(mappingURL, "/") {
-		if strings.Index(mappingURL, "/") == 0 {
-			return r.baseURL() + mappingURL[1:]
-		} else {
-			return r.baseURL() + mappingURL
-		}
+		return r.baseURL() + mappingURL
 	} else {
 		index := strings.LastIndex(r.URL, "/")
 		url := r.URL[0 : index+1]
