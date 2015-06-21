@@ -7,11 +7,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestErrorCreatedCreatesError(t *testing.T) {
+func TestProcessEventCreatesError(t *testing.T) {
 	_, _, project := aup(t)
 	e := makeEvent(t, project, "{}")
 
-	err := ErrorCreated(e.ID)
+	err := ProcessEvent(e.ID)
 	assert.Nil(t, err)
 
 	groups, err := models.Errors.FindQuery(models.ErrorQuery{ProjectID: project.ID})
@@ -19,30 +19,30 @@ func TestErrorCreatedCreatesError(t *testing.T) {
 	assert.NotEmpty(t, groups)
 }
 
-func TestErrorCreated_DeliversNotifcations(t *testing.T) {
+func TestProcessEvent_DeliversNotifcations(t *testing.T) {
 	emailSender.Clear()
 	_, user, project := aup(t)
 	e := makeEvent(t, project, "{}")
 
-	err := ErrorCreated(e.ID)
+	err := ProcessEvent(e.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, len(emailSender.sends), 1)
 
 	send := emailSender.sends[0]
 	assert.Equal(t, send["to"], user.Email)
 
-	err = ErrorCreated(e.ID)
+	err = ProcessEvent(e.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(emailSender.sends))
 }
 
-func TestErrorCreated_DeliversNotifcationsWhenResolved(t *testing.T) {
+func TestProcessEvent_DeliversNotifcationsWhenResolved(t *testing.T) {
 	emailSender.Clear()
 
 	_, _, project := aup(t)
 	e := makeEvent(t, project, "{}")
 
-	err := ErrorCreated(e.ID)
+	err := ProcessEvent(e.ID)
 	assert.Equal(t, 1, len(emailSender.sends))
 
 	group, err := models.Errors.FindOrCreate(project, e)
@@ -51,7 +51,7 @@ func TestErrorCreated_DeliversNotifcationsWhenResolved(t *testing.T) {
 	assert.Nil(t, err)
 
 	emailSender.Clear()
-	err = ErrorCreated(e.ID)
+	err = ProcessEvent(e.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(emailSender.sends))
 
@@ -65,12 +65,12 @@ func TestErrorCreated_DeliversNotifcationsWhenResolved(t *testing.T) {
 	assert.Nil(t, err)
 
 	emailSender.Clear()
-	err = ErrorCreated(e.ID)
+	err = ProcessEvent(e.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(emailSender.sends))
 }
 
-func TestErrorCreated_DoesNotDeliverNotifcationsToUsersThatDoNotWantThem(t *testing.T) {
+func TestProcessEvent_DoesNotDeliverNotifcationsToUsersThatDoNotWantThem(t *testing.T) {
 	emailSender.Clear()
 
 	_, user, project := aup(t)
@@ -83,6 +83,6 @@ func TestErrorCreated_DoesNotDeliverNotifcationsToUsersThatDoNotWantThem(t *test
 	err = models.Prefs.Update(pref)
 	assert.Nil(t, err)
 
-	err = ErrorCreated(e.ID)
+	err = ProcessEvent(e.ID)
 	assert.Equal(t, 0, len(emailSender.sends))
 }

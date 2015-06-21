@@ -6,36 +6,27 @@ import (
 	"github.com/erraroo/erraroo/models"
 )
 
-func ErrorCreated(eventID int64) error {
+func ProcessEvent(eventID int64) error {
 	e, err := models.Events.FindByID(eventID)
 	if err != nil {
 		return err
 	}
 
-	err = processEvent(e)
+	err = e.PostProcess()
 	if err != nil {
+		logger.Error("event.PostProcess", "err", err, "event.ID", e.ID)
 		return err
 	}
 
-	return afterEventProcessed(e)
-}
-
-func processEvent(e *models.Event) error {
-	err := e.PostProcess()
-	if err != nil {
-		logger.Error("populating stack context", "err", err, "error.ID", e.ID)
-	} else {
-		err = models.Events.Update(e)
-		if err != nil {
-			logger.Error("updating error", "err", err, "error", e.ID)
-			return err
-		}
+	if e.Kind == "js.error" {
+		return afterJsErrorProcessed(e)
 	}
 
 	return nil
+
 }
 
-func afterEventProcessed(e *models.Event) error {
+func afterJsErrorProcessed(e *models.Event) error {
 	p, err := models.Projects.FindByID(e.ProjectID)
 	if err != nil {
 		return err
@@ -43,14 +34,14 @@ func afterEventProcessed(e *models.Event) error {
 
 	group, err := models.Errors.FindOrCreate(p, e)
 	if err != nil {
-		logger.Error("finding or creating group", "err", err)
+		logger.Error("finding or creating error group", "err", err)
 		return err
 	}
 
 	if group.ShouldNotify() {
 		err = notifyUsersOfNewError(p, group)
 		if err != nil {
-			logger.Error("group notifcations", "err", err, "project", p.ID, "group", group.ID)
+			logger.Error("notifying users", "err", err, "project", p.ID, "group", group.ID)
 			return err
 		}
 	}
@@ -62,7 +53,6 @@ func afterEventProcessed(e *models.Event) error {
 	}
 
 	return nil
-
 }
 
 func notifyUsersOfNewError(project *models.Project, group *models.Error) error {

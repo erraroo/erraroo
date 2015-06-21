@@ -83,8 +83,8 @@ func main() {
 			Usage: "run a usecase",
 			Subcommands: []cli.Command{
 				{
-					Name:  "ErrorCreated",
-					Usage: "run the ErrorCreated usecase",
+					Name:  "ProcessEvent",
+					Usage: "run the ProcessEvent usecase",
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "id",
@@ -98,7 +98,7 @@ func main() {
 							logger.Fatal("could not parse id argument", "err", err)
 						}
 
-						err = usecases.ErrorCreated(id)
+						err = usecases.ProcessEvent(id)
 						if err != nil {
 							logger.Fatal("could not complete job", "err", err)
 						}

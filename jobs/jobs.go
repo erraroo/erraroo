@@ -33,5 +33,5 @@ func EventProcess(job *rsq.Job, ctx *cx.Context) error {
 		return err
 	}
 
-	return usecases.ErrorCreated(id)
+	return usecases.ProcessEvent(id)
 }
