@@ -24,7 +24,7 @@ type ErrorQueryResults struct {
 }
 
 func newError(p *Project, e *Event) *Error {
-	return &Error{ProjectID: p.ID, Message: e.Message(), Checksum: e.Checksum}
+	return &Error{ProjectID: p.ID, Message: e.Message(), Checksum: e.Checksum, Name: e.Name()}
 }
 
 func (g *Error) ShouldNotify() bool {

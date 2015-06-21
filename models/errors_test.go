@@ -22,6 +22,7 @@ func TestErrors(t *testing.T) {
 	assert.Equal(t, group.Checksum, e.Checksum)
 	assert.Equal(t, group.ProjectID, e.ProjectID)
 	assert.Equal(t, group.Message, e.Message())
+	assert.Equal(t, group.Name, e.Name())
 
 	group2, err := Errors.FindOrCreate(project, e)
 	assert.Nil(t, err)
@@ -59,4 +60,25 @@ func TestErrors(t *testing.T) {
 	})
 	assert.Nil(t, err)
 	assert.Empty(t, groups.Errors)
+}
+
+func TestErrors_TouchCountsNumberOfOccurrences(t *testing.T) {
+	account, err := Accounts.Create()
+	assert.Nil(t, err)
+
+	project, err := Projects.Create("Test Project", account.ID)
+	assert.Nil(t, err)
+
+	event, err := Events.Create(project.Token, "{}")
+	assert.Nil(t, err)
+
+	event, err = Events.Create(project.Token, "{}")
+	assert.Nil(t, err)
+
+	e, err := Errors.FindOrCreate(project, event)
+	assert.Nil(t, err)
+
+	err = Errors.Touch(e)
+	assert.Nil(t, err)
+	assert.Equal(t, e.Occurrences, 2)
 }

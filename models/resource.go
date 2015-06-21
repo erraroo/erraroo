@@ -35,10 +35,24 @@ func (r *Resource) SourceMapURL() string {
 	reg := regexp.MustCompile("//# sourceMappingURL=(.*)")
 	if reg.MatchString(r.Source) {
 		matches := reg.FindStringSubmatch(r.Source)
-		return r.baseURL() + matches[1]
+		return r.buildSourceMapURL(matches[1])
 	}
 
 	return ""
+}
+
+func (r *Resource) buildSourceMapURL(mappingURL string) string {
+	if strings.Contains(mappingURL, "/") {
+		if strings.Index(mappingURL, "/") == 0 {
+			return r.baseURL() + mappingURL[1:]
+		} else {
+			return r.baseURL() + mappingURL
+		}
+	} else {
+		index := strings.LastIndex(r.URL, "/")
+		url := r.URL[0 : index+1]
+		return url + mappingURL
+	}
 }
 
 func (r *Resource) Context(lineno int, column int) SourceContext {

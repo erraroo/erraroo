@@ -117,3 +117,8 @@ func (e *Event) Message() string {
 	jse, _ := e.unmarshalJSEvent()
 	return jse.Trace.Message
 }
+
+func (e *Event) Name() string {
+	jse, _ := e.unmarshalJSEvent()
+	return jse.Trace.Name
+}
