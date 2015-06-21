@@ -81,6 +81,7 @@ func (s *eventsStore) Update(e *Event) error {
 type EventQuery struct {
 	ProjectID int64
 	Checksum  string
+	Kind      string
 	QueryOptions
 }
 
@@ -104,6 +105,11 @@ func (s *eventsStore) FindQuery(q EventQuery) (EventResults, error) {
 	if q.Checksum != "" {
 		countQuery = countQuery.Where("checksum=?", q.Checksum)
 		findQuery = findQuery.Where("checksum=?", q.Checksum)
+	}
+
+	if q.Kind != "" {
+		countQuery = countQuery.Where("kind=?", q.Kind)
+		findQuery = findQuery.Where("kind=?", q.Kind)
 	}
 
 	findQuery = findQuery.Limit(uint64(q.PerPageOrDefault())).Offset(uint64(q.Offset()))

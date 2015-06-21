@@ -120,6 +120,7 @@ func Index(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 
 	events, err := models.Events.FindQuery(models.EventQuery{
 		Checksum:     r.URL.Query().Get("checksum"),
+		Kind:         r.URL.Query().Get("kind"),
 		ProjectID:    project.ID,
 		QueryOptions: api.QueryOptions(r),
 	})
