@@ -3,6 +3,7 @@ package models
 import (
 	"encoding/json"
 	"log"
+	"math"
 	"time"
 )
 
@@ -38,6 +39,8 @@ func (t *Timing) Average(payload string) error {
 		} else {
 			newData[key] = 0
 		}
+
+		newData[key] = toFixed(newData[key], 0)
 	}
 
 	newPayload, err := json.Marshal(newData)
@@ -48,4 +51,13 @@ func (t *Timing) Average(payload string) error {
 
 	t.Payload = string(newPayload)
 	return Timings.Update(t)
+}
+
+func toFixed(num float64, precision int) float64 {
+	output := math.Pow(10, float64(precision))
+	return float64(round(num*output)) / output
+}
+
+func round(num float64) int {
+	return int(num + math.Copysign(0.5, num))
 }

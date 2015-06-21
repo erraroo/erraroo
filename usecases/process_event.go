@@ -23,7 +23,6 @@ func ProcessEvent(eventID int64) error {
 	}
 
 	return nil
-
 }
 
 func afterJsErrorProcessed(e *models.Event) error {

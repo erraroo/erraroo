@@ -17,6 +17,7 @@ type jsEvent struct {
 	URL       string    `json:"url"`
 	UserAgent string    `json:"userAgent"`
 	Version   string    `json:"version"`
+	Processed bool      `json:"processed"`
 }
 
 type library struct {
@@ -80,6 +81,7 @@ func (e *jsErrorEvent) PostProcess() error {
 		}
 	}
 
+	jse.Processed = true
 	payload, err := json.Marshal(jse)
 	if err != nil {
 		return err

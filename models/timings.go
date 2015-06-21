@@ -15,7 +15,7 @@ type timingsStore struct{ *Store }
 
 func (s *timingsStore) Create(project *Project, data string) (*Timing, error) {
 	timing := &Timing{}
-	err := s.Get(timing, "select * from timings where project_id=$1 and created_at=date_trunc('minute', now());",
+	err := s.Get(timing, "select * from timings where project_id=$1 and created_at=date_trunc('hour', now());",
 		project.ID,
 	)
 
@@ -27,7 +27,7 @@ func (s *timingsStore) Create(project *Project, data string) (*Timing, error) {
 			project_id,
 			payload,
 			created_at
-		) values ($1,$2, date_trunc('minute', now())) returning id, created_at`
+		) values ($1,$2, date_trunc('hour', now())) returning id, created_at`
 
 		row := s.QueryRow(query, timing.ProjectID, timing.Payload)
 		return timing, row.Scan(&timing.ID, &timing.CreatedAt)
@@ -47,7 +47,7 @@ func (s *timingsStore) Update(t *Timing) error {
 func (s *timingsStore) Last7Days(project *Project) ([]*Timing, error) {
 	timings := []*Timing{}
 
-	query := "select * from timings where project_id = $1"
+	query := "select * from timings where project_id = $1 and created_at > now()::date - interval '7d'"
 	err := s.Select(&timings, query, project.ID)
 	if err != nil {
 		log.Printf("[store] [error]: %v\n", err)
