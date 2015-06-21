@@ -27,7 +27,7 @@ func TestEmptySignup(t *testing.T) {
 }
 
 func TestDuplicateEmailSignup(t *testing.T) {
-	signupRequest := signups.SignupRequest{signups.Signup{_user.Email, "password"}}
+	signupRequest := signups.SignupRequest{signups.Signup{_user.Email, "password", "large"}}
 	req, res := rr("POST", "/api/v1/signups", signupRequest)
 
 	_app.ServeHTTP(res, req)
@@ -42,7 +42,7 @@ func TestDuplicateEmailSignup(t *testing.T) {
 
 func TestValidSignup(t *testing.T) {
 	email := uniqEmail()
-	signupRequest := signups.SignupRequest{signups.Signup{email, "password"}}
+	signupRequest := signups.SignupRequest{signups.Signup{email, "password", "large"}}
 	req, res := rr("POST", "/api/v1/signups", signupRequest)
 
 	_app.ServeHTTP(res, req)
@@ -55,4 +55,11 @@ func TestValidSignup(t *testing.T) {
 	assert.NotEqual(t, 0, user.ID)
 	assert.Equal(t, email, user.Email)
 	assert.Nil(t, user.CheckPassword("password"))
+
+	plan, err := models.Plans.Get(&models.Account{ID: user.AccountID})
+	assert.Nil(t, err)
+	assert.NotNil(t, plan)
+	assert.Equal(t, user.AccountID, plan.AccountID)
+	assert.Equal(t, 21, plan.DataRetentionInDays)
+	assert.Equal(t, 30, plan.RequestsPerMinute)
 }

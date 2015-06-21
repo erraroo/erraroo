@@ -1,22 +1,26 @@
 package models
 
-import "github.com/erraroo/erraroo/logger"
+import (
+	"database/sql"
 
-var PlanMap = make(map[string]Plan)
+	"github.com/erraroo/erraroo/logger"
+)
+
+var plans = make(map[string]Plan)
 
 func byName(name string) Plan {
-	if plan, ok := PlanMap[name]; ok {
+	if plan, ok := plans[name]; ok {
 		return plan
 	} else {
-		return PlanMap["default"]
+		return plans["default"]
 	}
 }
 
 func init() {
-	PlanMap["default"] = Plan{RequestsPerMinute: 10, DataRetentionInDays: 7}
-	PlanMap["small"] = Plan{RequestsPerMinute: 10, DataRetentionInDays: 7}
-	PlanMap["medium"] = Plan{RequestsPerMinute: 20, DataRetentionInDays: 14}
-	PlanMap["large"] = Plan{RequestsPerMinute: 30, DataRetentionInDays: 21}
+	plans["default"] = Plan{RequestsPerMinute: 10, DataRetentionInDays: 7}
+	plans["small"] = Plan{RequestsPerMinute: 10, DataRetentionInDays: 7}
+	plans["medium"] = Plan{RequestsPerMinute: 20, DataRetentionInDays: 14}
+	plans["large"] = Plan{RequestsPerMinute: 30, DataRetentionInDays: 21}
 }
 
 type Plan struct {
@@ -66,13 +70,20 @@ func (s *plansStore) Create(account *Account, name string) (*Plan, error) {
 }
 
 func (s *plansStore) Get(account *Account) (*Plan, error) {
-	query := `select * from plans where account_id = $1 limit 1;`
 	p := new(Plan)
+
+	query := `select * from plans where account_id = $1 limit 1;`
 	err := s.QueryRow(query, account.ID).Scan(
 		&p.AccountID,
 		&p.DataRetentionInDays,
 		&p.RequestsPerMinute,
 	)
+
+	if err == sql.ErrNoRows {
+		defaultPlan := byName("default")
+		logger.Error("using default plan", "account", account.ID)
+		return &defaultPlan, nil
+	}
 
 	if err != nil {
 		logger.Error("getting plans", "err", err, "account", account.ID)
