@@ -35,6 +35,7 @@ func (s SignupRequest) Validate() (models.ValidationErrors, error) {
 type Signup struct {
 	Email    string
 	Password string
+	Plan     string
 }
 
 func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
@@ -51,6 +52,11 @@ func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	}
 
 	account, err := models.Accounts.Create()
+	if err != nil {
+		return err
+	}
+
+	_, err = models.Plans.Create(account, request.Signup.Plan)
 	if err != nil {
 		return err
 	}
