@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/erraroo/erraroo/api/bus"
 	"github.com/erraroo/erraroo/cx"
 	"github.com/erraroo/erraroo/logger"
 	"github.com/erraroo/erraroo/models"
@@ -38,14 +39,18 @@ func MeHandler(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 }
 
 func Backlog(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
-	channels := puller.Channels{}
+	err := r.ParseForm()
+	if err != nil {
+		return err
+	}
 
-	for key, id := range r.URL.Query() {
+	channels := puller.Channels{}
+	for key, id := range r.Form {
 		lastID, _ := strconv.Atoi(id[0])
 		channels[key] = int64(lastID)
 	}
 
-	backlog, err := puller.Backlog(channels, 10*time.Second)
+	backlog, err := bus.Pull(channels, 10*time.Second)
 	if err != nil {
 		logger.Error("pulling backlog", "err", err)
 		return err

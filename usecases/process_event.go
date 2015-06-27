@@ -3,11 +3,11 @@ package usecases
 import (
 	"fmt"
 
+	"github.com/erraroo/erraroo/api/bus"
 	"github.com/erraroo/erraroo/logger"
 	"github.com/erraroo/erraroo/mailers"
 	"github.com/erraroo/erraroo/models"
 	"github.com/erraroo/erraroo/serializers"
-	"github.com/nerdyworm/puller"
 )
 
 func ProcessEvent(eventID int64) error {
@@ -27,11 +27,6 @@ func ProcessEvent(eventID int64) error {
 	}
 
 	return nil
-}
-
-type Event struct {
-	Name    string
-	Payload interface{}
 }
 
 func afterJsErrorProcessed(e *models.Event) error {
@@ -67,17 +62,13 @@ func afterJsErrorProcessed(e *models.Event) error {
 			return err
 		}
 
-		puller.Publish(accountChannel(project.AccountID), Event{
+		bus.Push(accountChannel(project.AccountID), bus.Notifcation{
 			Name:    "errors.update",
 			Payload: serializers.NewUpdateError(project, group),
 		})
 	}
 
 	return nil
-}
-
-func accountChannel(accountID int64) string {
-	return fmt.Sprintf("accounts.%d", accountID)
 }
 
 func notifyUsersOfNewError(project *models.Project, group *models.Error) error {
@@ -104,4 +95,8 @@ func notifyUsersOfNewError(project *models.Project, group *models.Error) error {
 	}
 
 	return nil
+}
+
+func accountChannel(accountID int64) string {
+	return fmt.Sprintf("accounts.%d", accountID)
 }
