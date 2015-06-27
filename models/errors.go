@@ -77,9 +77,13 @@ func (s *errorsStore) insert(group *Error) error {
 }
 
 func (s *errorsStore) Touch(g *Error) error {
-	query := "update errors set occurrences=(select count(*) from events where events.checksum = $1), last_seen_at=now_utc(), resolved='f', updated_at=now_utc() where id=$2 returning occurrences, updated_at"
-	return s.QueryRow(query, g.Checksum, g.ID).
-		Scan(&g.Occurrences, &g.UpdatedAt)
+	query := "update errors set occurrences=(select count(*) from events where events.checksum = $1), last_seen_at=now_utc(), resolved='f', updated_at=now_utc() where id=$2 returning resolved, occurrences, last_seen_at, updated_at"
+	return s.QueryRow(query, g.Checksum, g.ID).Scan(
+		&g.Resolved,
+		&g.Occurrences,
+		&g.LastSeenAt,
+		&g.UpdatedAt,
+	)
 }
 
 func (s *errorsStore) Update(group *Error) error {
