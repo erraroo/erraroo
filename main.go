@@ -7,14 +7,18 @@ import (
 	"os/signal"
 	"syscall"
 
+	"gopkg.in/redis.v3"
+
 	"github.com/codegangsta/cli"
 	"github.com/erraroo/erraroo/api"
+	"github.com/erraroo/erraroo/api/bus"
 	"github.com/erraroo/erraroo/app"
 	"github.com/erraroo/erraroo/config"
 	"github.com/erraroo/erraroo/jobs"
 	"github.com/erraroo/erraroo/logger"
 	"github.com/erraroo/erraroo/models"
 	"github.com/erraroo/erraroo/usecases"
+	"github.com/nerdyworm/puller"
 	"github.com/nerdyworm/rsq"
 )
 
@@ -30,7 +34,16 @@ func main() {
 		QueueURL:          config.SqsQueueURL,
 	}))
 
+	client := redis.NewClient(&redis.Options{
+		Addr: config.Redis,
+	})
+	defer client.Close()
+
 	api.Limiter = api.NoLimiter()
+	bus.Puller = puller.New(puller.Options{
+		MaxBacklogSize: 10,
+		Redis:          client,
+	})
 
 	erraroo := app.New()
 	defer erraroo.Shutdown()

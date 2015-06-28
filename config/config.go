@@ -7,6 +7,7 @@ var (
 	MigrationsPath       string
 	Port                 int
 	Postgres             string
+	Redis                string
 	SqsLongPollTimeout   int64
 	SqsMessagesPerWorker int64
 	SqsQueueURL          string
@@ -39,6 +40,7 @@ func init() {
 
 	// DB
 	Postgres = viper.GetString("Postgres")
+	Redis = viper.GetString("Redis")
 
 	// Queues
 	SqsLongPollTimeout = int64(viper.GetInt("SqsLongPollTimeout"))

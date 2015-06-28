@@ -3,23 +3,10 @@ package bus
 import (
 	"time"
 
-	"gopkg.in/redis.v3"
-
 	"github.com/nerdyworm/puller"
 )
 
-var p *puller.Puller
-
-func init() {
-	client := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-	})
-
-	p = puller.New(puller.Options{
-		MaxBacklogSize: 10,
-		Redis:          client,
-	})
-}
+var Puller *puller.Puller
 
 type Notifcation struct {
 	Name    string
@@ -27,9 +14,9 @@ type Notifcation struct {
 }
 
 func Push(channel string, payload interface{}) error {
-	return p.Push(channel, payload)
+	return Puller.Push(channel, payload)
 }
 
 func Pull(channels puller.Channels, t time.Duration) (puller.Backlog, error) {
-	return p.Pull(channels, t)
+	return Puller.Pull(channels, t)
 }
