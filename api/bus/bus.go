@@ -3,6 +3,7 @@ package bus
 import (
 	"time"
 
+	"github.com/erraroo/erraroo/logger"
 	"github.com/nerdyworm/puller"
 )
 
@@ -14,6 +15,11 @@ type Notifcation struct {
 }
 
 func Push(channel string, payload interface{}) error {
+	if Puller == nil {
+		logger.Error("pushing into nil puller", "channel", channel, "payload", payload)
+		return nil
+	}
+
 	return Puller.Push(channel, payload)
 }
 
