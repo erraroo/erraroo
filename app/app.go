@@ -90,7 +90,7 @@ func (a *App) newContext(r *http.Request) (*cx.Context, error) {
 	if r != nil {
 		id, err := getCurrentUserID(r)
 		if err != nil {
-			logger.Error("getting current user", "err", err)
+			logger.Error("getting current user", "err", err, "token", r.Header.Get("Authorization"))
 			return ctx, err
 		}
 
