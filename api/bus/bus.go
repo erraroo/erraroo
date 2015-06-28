@@ -3,14 +3,21 @@ package bus
 import (
 	"time"
 
+	"gopkg.in/redis.v3"
+
 	"github.com/nerdyworm/puller"
 )
 
-var p puller.Puller
+var p *puller.Puller
 
 func init() {
-	p = puller.NewMemoryPuller(puller.MemoryPullerOptions{
-		MaxMessagesPerChannel: 100,
+	client := redis.NewClient(&redis.Options{
+		Addr: "localhost:6379",
+	})
+
+	p = puller.New(puller.Options{
+		MaxBacklogSize: 10,
+		Redis:          client,
 	})
 }
 
