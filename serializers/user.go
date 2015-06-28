@@ -37,5 +37,5 @@ func NewShowUser(user *models.User, pref *models.Pref) ShowUser {
 func gravatar(email string) string {
 	hash := md5.New()
 	io.WriteString(hash, email)
-	return fmt.Sprintf("http://www.gravatar.com/avatar/%x?d=identicon", hash.Sum(nil))
+	return fmt.Sprintf("//www.gravatar.com/avatar/%x?d=identicon", hash.Sum(nil))
 }
