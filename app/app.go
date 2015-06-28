@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -21,6 +22,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
 	"github.com/nerdyworm/rsq"
+)
+
+var (
+	ErrInvalidToken = errors.New("invalid token")
 )
 
 // App is the main application for erraroo
@@ -89,8 +94,12 @@ func (a *App) newContext(r *http.Request) (*cx.Context, error) {
 
 	if r != nil {
 		id, err := getCurrentUserID(r)
+		if err == ErrInvalidToken {
+			return ctx, err
+		}
+
 		if err != nil {
-			logger.Error("getting current user", "err", err, "token", r.Header.Get("Authorization"))
+			logger.Error("getting current user", "err", err)
 			return ctx, err
 		}
 
@@ -123,8 +132,7 @@ func getCurrentUserID(r *http.Request) (int64, error) {
 	})
 
 	if err != nil {
-		logger.Error("parsing authorization token", "err", err)
-		return 0, err
+		return 0, ErrInvalidToken
 	}
 
 	id := token.Claims["user_id"].(float64)
