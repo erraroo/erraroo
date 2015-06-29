@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/erraroo/erraroo/api/sessions"
+	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/models"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,7 +14,7 @@ func TestInvalidCreateSession(t *testing.T) {
 	errors := models.ValidationErrors{}
 
 	// Empty signin request
-	req, res := rr("POST", "/api/v1/sessions", sessions.SigninRequest{})
+	req, res := rr("POST", "/api/v1/sessions", api.SigninRequest{})
 	_app.ServeHTTP(res, req)
 	json.NewDecoder(res.Body).Decode(&errors)
 
@@ -22,7 +22,7 @@ func TestInvalidCreateSession(t *testing.T) {
 	assert.True(t, errors.Any(), "expected response to have errors")
 	assert.Contains(t, errors.Errors["Signin"], "invalid email or password")
 
-	req, res = rr("POST", "/api/v1/sessions", sessions.SigninRequest{sessions.Signin{_user.Email, "INVALID PASSWORD"}})
+	req, res = rr("POST", "/api/v1/sessions", api.SigninRequest{api.Signin{_user.Email, "INVALID PASSWORD"}})
 	_app.ServeHTTP(res, req)
 	json.NewDecoder(res.Body).Decode(&errors)
 	assert.True(t, errors.Any(), "expected response to have errors")
@@ -30,7 +30,7 @@ func TestInvalidCreateSession(t *testing.T) {
 }
 
 func TestCreateSession(t *testing.T) {
-	req, res := rr("POST", "/api/v1/sessions", sessions.SigninRequest{sessions.Signin{_user.Email, "password"}})
+	req, res := rr("POST", "/api/v1/sessions", api.SigninRequest{api.Signin{_user.Email, "password"}})
 	_app.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusCreated, res.Code)
 

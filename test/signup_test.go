@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/erraroo/erraroo/api/signups"
+	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/models"
 	"github.com/stretchr/testify/assert"
 )
@@ -27,7 +27,7 @@ func TestEmptySignup(t *testing.T) {
 }
 
 func TestDuplicateEmailSignup(t *testing.T) {
-	signupRequest := signups.SignupRequest{signups.Signup{_user.Email, "password", "large"}}
+	signupRequest := api.SignupRequest{api.Signup{_user.Email, "password", "large"}}
 	req, res := rr("POST", "/api/v1/signups", signupRequest)
 
 	_app.ServeHTTP(res, req)
@@ -42,7 +42,7 @@ func TestDuplicateEmailSignup(t *testing.T) {
 
 func TestValidSignup(t *testing.T) {
 	email := uniqEmail()
-	signupRequest := signups.SignupRequest{signups.Signup{email, "password", "large"}}
+	signupRequest := api.SignupRequest{api.Signup{email, "password", "large"}}
 	req, res := rr("POST", "/api/v1/signups", signupRequest)
 
 	_app.ServeHTTP(res, req)

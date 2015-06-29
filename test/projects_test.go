@@ -6,14 +6,14 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/erraroo/erraroo/api/projects"
+	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/models"
 	"github.com/erraroo/erraroo/serializers"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateProject(t *testing.T) {
-	request := projects.ProjectRequest{}
+	request := api.ProjectRequest{}
 	request.Project.Name = "test project"
 
 	req, res := rr("POST", "/api/v1/projects", request)

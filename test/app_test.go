@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/erraroo/erraroo/api"
-	"github.com/erraroo/erraroo/api/sessions"
 	"github.com/erraroo/erraroo/app"
 	"github.com/erraroo/erraroo/config"
 	"github.com/erraroo/erraroo/models"
@@ -50,7 +49,7 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
-	req, res := rr("POST", "/api/v1/sessions", sessions.SigninRequest{sessions.Signin{_user.Email, "password"}})
+	req, res := rr("POST", "/api/v1/sessions", api.SigninRequest{api.Signin{_user.Email, "password"}})
 	_app.ServeHTTP(res, req)
 	response := map[string]string{}
 	json.NewDecoder(res.Body).Decode(&response)
@@ -71,7 +70,7 @@ func rr(method string, path string, payload interface{}) (*http.Request, *httpte
 }
 
 func signin(t *testing.T, email string, password string) string {
-	req, res := rr("POST", "/api/v1/sessions", sessions.SigninRequest{sessions.Signin{email, password}})
+	req, res := rr("POST", "/api/v1/sessions", api.SigninRequest{api.Signin{email, password}})
 	_app.ServeHTTP(res, req)
 
 	if !assert.Equal(t, http.StatusCreated, res.Code) {

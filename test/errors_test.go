@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/erraroo/erraroo/api/events"
+	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/jobs"
 	"github.com/erraroo/erraroo/models"
 	"github.com/erraroo/erraroo/serializers"
@@ -22,7 +22,7 @@ func TestCreateAccount(t *testing.T) {
 func TestCreateEvent(t *testing.T) {
 	project, _ := models.Projects.Create("test project", _account.ID)
 
-	request := events.CreateEventRequest{
+	request := api.CreateEventRequest{
 		Kind: "js.error",
 		Data: map[string]interface{}{
 			"message": "error thrown",
