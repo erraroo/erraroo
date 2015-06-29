@@ -8,12 +8,6 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/erraroo/erraroo/api"
-	"github.com/erraroo/erraroo/api/events"
-	"github.com/erraroo/erraroo/api/prefs"
-	"github.com/erraroo/erraroo/api/projects"
-	"github.com/erraroo/erraroo/api/sessions"
-	"github.com/erraroo/erraroo/api/signups"
-	"github.com/erraroo/erraroo/api/timings"
 	"github.com/erraroo/erraroo/config"
 	"github.com/erraroo/erraroo/cx"
 	"github.com/erraroo/erraroo/jobs"
@@ -62,23 +56,23 @@ func (a *App) setupMiddleware() {
 func (a *App) setupMux() {
 	a.Router = mux.NewRouter()
 	a.Router.NotFoundHandler = a.Handler(api.NotFoundHandler)
-	a.Router.Handle("/api/v1/signups", a.Handler(signups.Create)).Methods("POST")
-	a.Router.Handle("/api/v1/sessions", a.Handler(sessions.Create)).Methods("POST")
-	a.Router.Handle("/api/v1/sessions", a.AuthroziedHandler(sessions.Destroy)).Methods("DELETE")
+	a.Router.Handle("/api/v1/signups", a.Handler(api.SignupsCreate)).Methods("POST")
+	a.Router.Handle("/api/v1/sessions", a.Handler(api.SessionsCreate)).Methods("POST")
+	a.Router.Handle("/api/v1/sessions", a.AuthroziedHandler(api.SessionsDestroy)).Methods("DELETE")
 	a.Router.Handle("/api/v1/me", a.AuthroziedHandler(api.MeHandler)).Methods("GET")
-	a.Router.Handle("/api/v1/events", a.Handler(events.Create)).Methods("POST")
-	a.Router.Handle("/api/v1/projects", a.AuthroziedHandler(projects.Index)).Methods("GET")
-	a.Router.Handle("/api/v1/projects", a.AuthroziedHandler(projects.Create)).Methods("POST")
-	a.Router.Handle("/api/v1/projects/{id}", a.AuthroziedHandler(projects.Show)).Methods("GET")
-	a.Router.Handle("/api/v1/projects/{id}", a.AuthroziedHandler(projects.Update)).Methods("PUT")
-	a.Router.Handle("/api/v1/events/{id}", a.AuthroziedHandler(events.Show)).Methods("GET")
-	a.Router.Handle("/api/v1/events", a.AuthroziedHandler(events.Index)).Methods("GET")
-	a.Router.Handle("/api/v1/errors", a.AuthroziedHandler(api.IndexErrors)).Methods("GET")
-	a.Router.Handle("/api/v1/errors/{id}", a.AuthroziedHandler(api.ShowError)).Methods("GET")
-	a.Router.Handle("/api/v1/errors/{id}", a.AuthroziedHandler(api.UpdateError)).Methods("PUT")
+	a.Router.Handle("/api/v1/events", a.Handler(api.EventsCreate)).Methods("POST")
+	a.Router.Handle("/api/v1/projects", a.AuthroziedHandler(api.ProjectsIndex)).Methods("GET")
+	a.Router.Handle("/api/v1/projects", a.AuthroziedHandler(api.ProjectsCreate)).Methods("POST")
+	a.Router.Handle("/api/v1/projects/{id}", a.AuthroziedHandler(api.ProjectsShow)).Methods("GET")
+	a.Router.Handle("/api/v1/projects/{id}", a.AuthroziedHandler(api.ProjectsUpdate)).Methods("PUT")
+	a.Router.Handle("/api/v1/events/{id}", a.AuthroziedHandler(api.EventsShow)).Methods("GET")
+	a.Router.Handle("/api/v1/events", a.AuthroziedHandler(api.EventsIndex)).Methods("GET")
+	a.Router.Handle("/api/v1/errors", a.AuthroziedHandler(api.ErrorsIndex)).Methods("GET")
+	a.Router.Handle("/api/v1/errors/{id}", a.AuthroziedHandler(api.ErrorsShow)).Methods("GET")
+	a.Router.Handle("/api/v1/errors/{id}", a.AuthroziedHandler(api.ErrorsUpdate)).Methods("PUT")
 	a.Router.Handle("/api/v1/users/{id}", a.AuthroziedHandler(api.MeHandler)).Methods("GET")
-	a.Router.Handle("/api/v1/prefs/{id}", a.AuthroziedHandler(prefs.Update)).Methods("PUT")
-	a.Router.Handle("/api/v1/timings", a.AuthroziedHandler(timings.Index)).Methods("GET")
+	a.Router.Handle("/api/v1/prefs/{id}", a.AuthroziedHandler(api.PrefsUpdate)).Methods("PUT")
+	a.Router.Handle("/api/v1/timings", a.AuthroziedHandler(api.TimingsIndex)).Methods("GET")
 	a.Router.Handle("/api/v1/backlog", a.AuthroziedHandler(api.Backlog)).Methods("POST")
 	a.Router.HandleFunc("/healthcheck", api.Healthcheck).Methods("GET")
 }

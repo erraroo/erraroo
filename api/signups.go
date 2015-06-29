@@ -1,9 +1,8 @@
-package signups
+package api
 
 import (
 	"net/http"
 
-	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/cx"
 	"github.com/erraroo/erraroo/logger"
 	"github.com/erraroo/erraroo/models"
@@ -38,9 +37,9 @@ type Signup struct {
 	Plan     string
 }
 
-func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
+func SignupsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	request := SignupRequest{}
-	api.Decode(r, &request)
+	Decode(r, &request)
 
 	errors, err := request.Validate()
 	if err != nil {
@@ -48,7 +47,7 @@ func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	}
 
 	if errors.Any() {
-		return api.JSON(w, http.StatusBadRequest, errors)
+		return errors
 	}
 
 	account, err := models.Accounts.Create()
@@ -76,5 +75,5 @@ func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		return err
 	}
 
-	return api.JSON(w, http.StatusCreated, serializers.NewShowUser(user, prefs))
+	return JSON(w, http.StatusCreated, serializers.NewShowUser(user, prefs))
 }

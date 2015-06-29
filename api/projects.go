@@ -1,9 +1,8 @@
-package projects
+package api
 
 import (
 	"net/http"
 
-	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/cx"
 	"github.com/erraroo/erraroo/models"
 	"github.com/erraroo/erraroo/serializers"
@@ -26,7 +25,7 @@ func (p ProjectParams) Validate() (models.ValidationErrors, error) {
 	return errs, nil
 }
 
-func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
+func ProjectsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	params := projectParams(r)
 	errors, err := params.Validate()
 	if err != nil {
@@ -42,29 +41,29 @@ func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		return err
 	}
 
-	return api.JSON(w, http.StatusCreated, serializers.NewShowProject(project))
+	return JSON(w, http.StatusCreated, serializers.NewShowProject(project))
 }
 
-func Index(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
+func ProjectsIndex(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	projects, err := models.Projects.ByAccountID(ctx.User.AccountID)
 	if err != nil {
 		return err
 	}
 
-	return api.JSON(w, http.StatusOK, serializers.NewProjects(projects))
+	return JSON(w, http.StatusOK, serializers.NewProjects(projects))
 }
 
-func Show(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
+func ProjectsShow(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	project, err := getAuthorizedProject(r, ctx)
 	if err != nil {
 		return err
 	}
 
-	return api.JSON(w, http.StatusOK, serializers.NewShowProject(project))
+	return JSON(w, http.StatusOK, serializers.NewShowProject(project))
 }
 
-// Update updates the project record with an incoming UpdateProjectRequest
-func Update(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
+// ProjectsUpdate updates the project record with an incoming UpdateProjectRequest
+func ProjectsUpdate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	project, err := getAuthorizedProject(r, ctx)
 	if err != nil {
 		return err
@@ -86,11 +85,11 @@ func Update(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		return err
 	}
 
-	return api.JSON(w, http.StatusOK, serializers.NewShowProject(project))
+	return JSON(w, http.StatusOK, serializers.NewShowProject(project))
 }
 
 func getAuthorizedProject(r *http.Request, ctx *cx.Context) (*models.Project, error) {
-	id, err := api.GetID(r)
+	id, err := GetID(r)
 	if err != nil {
 		return nil, err
 	}
@@ -109,6 +108,6 @@ func getAuthorizedProject(r *http.Request, ctx *cx.Context) (*models.Project, er
 
 func projectParams(r *http.Request) ProjectParams {
 	request := ProjectRequest{}
-	api.Decode(r, &request)
+	Decode(r, &request)
 	return request.Project
 }

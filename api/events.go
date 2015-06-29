@@ -1,4 +1,4 @@
-package events
+package api
 
 import (
 	"encoding/json"
@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/cx"
 	"github.com/erraroo/erraroo/jobs"
 	"github.com/erraroo/erraroo/logger"
@@ -22,7 +21,7 @@ type CreateEventRequest struct {
 	Data map[string]interface{} `json:"data"`
 }
 
-func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
+func EventsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	token := r.Header.Get("X-Token")
 	if token == "" {
 		return errors.New("token was blank")
@@ -33,9 +32,9 @@ func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		return err
 	}
 
-	ok, err := api.Limiter.Check(token, rateLimitDuration, plan.RequestsPerMinute)
+	ok, err := Limiter.Check(token, rateLimitDuration, plan.RequestsPerMinute)
 	if err != nil {
-		logger.Error("api.Limiter.Check", "err", err)
+		logger.Error("Limiter.Check", "err", err)
 		return err
 	}
 
@@ -46,7 +45,7 @@ func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	}
 
 	request := CreateEventRequest{}
-	api.Decode(r, &request)
+	Decode(r, &request)
 
 	payload, err := json.Marshal(request.Data)
 	if err != nil {
@@ -80,8 +79,8 @@ func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	return nil
 }
 
-func Show(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
-	id, err := api.GetID(r)
+func EventsShow(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
+	id, err := GetID(r)
 	if err != nil {
 		return err
 	}
@@ -100,11 +99,11 @@ func Show(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		return models.ErrNotFound
 	}
 
-	return api.JSON(w, http.StatusOK, serializers.NewShowEvent(e))
+	return JSON(w, http.StatusOK, serializers.NewShowEvent(e))
 }
 
-func Index(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
-	projectID, err := api.QueryToID(r, "project_id")
+func EventsIndex(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
+	projectID, err := QueryToID(r, "project_id")
 	if err != nil {
 		return err
 	}
@@ -122,12 +121,12 @@ func Index(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		Checksum:     r.URL.Query().Get("checksum"),
 		Kind:         r.URL.Query().Get("kind"),
 		ProjectID:    project.ID,
-		QueryOptions: api.QueryOptions(r),
+		QueryOptions: QueryOptions(r),
 	})
 
 	if err != nil {
 		return err
 	}
 
-	return api.JSON(w, http.StatusOK, serializers.NewEvents(events))
+	return JSON(w, http.StatusOK, serializers.NewEvents(events))
 }

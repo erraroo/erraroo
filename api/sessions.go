@@ -1,11 +1,10 @@
-package sessions
+package api
 
 import (
 	"net/http"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/config"
 	"github.com/erraroo/erraroo/cx"
 	"github.com/erraroo/erraroo/models"
@@ -26,12 +25,12 @@ type Success struct {
 	Token string `json:"token"`
 }
 
-func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
+func SessionsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	errors := models.NewValidationErrors()
 	errors.Add("Signin", "invalid email or password")
 
 	request := SigninRequest{}
-	api.Decode(r, &request)
+	Decode(r, &request)
 
 	if request.Signin.Email == "" || request.Signin.Password == "" {
 		return errors
@@ -58,9 +57,9 @@ func Create(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		return err
 	}
 
-	return api.JSON(w, http.StatusCreated, Success{tokenString})
+	return JSON(w, http.StatusCreated, Success{tokenString})
 }
 
-func Destroy(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
+func SessionsDestroy(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	return nil
 }

@@ -19,8 +19,8 @@ type ErrorParams struct {
 	Muted    bool
 }
 
-// IndexErrors returns the paginated errors filtered by a project_id
-func IndexErrors(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
+// ErrorsIndex returns the paginated errors filtered by a project_id
+func ErrorsIndex(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	projectID, err := QueryToID(r, "project_id")
 	if err != nil {
 		return err
@@ -49,8 +49,8 @@ func IndexErrors(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error 
 	return JSON(w, http.StatusOK, serializers.NewErrors(groups))
 }
 
-// UpdateError updates the error record with an incoming UpdateErrorRequest
-func UpdateError(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
+// ErrorsUpdate updates the error record with an incoming UpdateErrorRequest
+func ErrorsUpdate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	group, err := getAuthorizedError(r, ctx)
 	if err != nil {
 		return err
@@ -74,8 +74,8 @@ func UpdateError(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error 
 	return JSON(w, http.StatusOK, serializers.NewUpdateError(project, group))
 }
 
-// Show returns the full group
-func ShowError(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
+// ErrorsShow returns the full group
+func ErrorsShow(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	group, err := getAuthorizedError(r, ctx)
 	if err != nil {
 		return err

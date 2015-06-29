@@ -1,15 +1,14 @@
-package prefs
+package api
 
 import (
 	"net/http"
 
-	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/cx"
 	"github.com/erraroo/erraroo/models"
 	"github.com/erraroo/erraroo/serializers"
 )
 
-type UpdateRequest struct {
+type PrefsUpdateRequest struct {
 	Pref PrefsParams
 }
 
@@ -17,14 +16,14 @@ type PrefsParams struct {
 	EmailOnError bool
 }
 
-func Update(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
+func PrefsUpdate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	pref, err := models.Prefs.Get(ctx.User)
 	if err != nil {
 		return err
 	}
 
-	request := UpdateRequest{}
-	err = api.Decode(r, &request)
+	request := PrefsUpdateRequest{}
+	err = Decode(r, &request)
 	if err != nil {
 		return err
 	}
@@ -35,5 +34,5 @@ func Update(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		return err
 	}
 
-	return api.JSON(w, http.StatusOK, serializers.NewShowPref(pref))
+	return JSON(w, http.StatusOK, serializers.NewShowPref(pref))
 }
