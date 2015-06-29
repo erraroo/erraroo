@@ -219,6 +219,8 @@ func handleError(err error, w http.ResponseWriter) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 	case cx.ErrLoginRequired:
 		http.Error(w, err.Error(), http.StatusUnauthorized)
+	case ErrInvalidToken:
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 	default:
 		logger.Error("executing app handler", "err", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
