@@ -67,3 +67,42 @@ const groupNotifcationEmailTemplate = `
 </html>
 {{end}}
 `
+
+func DeliverInvitation(user *models.User, to string) error {
+	body := bytes.NewBufferString("")
+
+	tmpl, err := template.New("T").Parse(invitationTemplate)
+	if err != nil {
+		return err
+	}
+
+	view := invitationView{user, "http://insert-link-here.com", "Invite"}
+	err = tmpl.Execute(body, view)
+	if err != nil {
+		return err
+	}
+
+	return emailer.Send(user.Email, view.Subject, body.String())
+}
+
+type invitationView struct {
+	From    *models.User
+	URL     string
+	Subject string
+}
+
+const invitationTemplate = `
+{{define "T"}}
+<html>
+	<head>
+	</head>
+	<body>
+		<p>Hello New Friend!</p>
+		<p>You were invited by {{.From.Email}}</p>
+		<p>
+			<a href="{{.URL}}">{{.URL}}</a>
+		</p>
+	</body>
+</html>
+{{end}}
+`
