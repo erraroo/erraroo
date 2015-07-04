@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/tuvistavie/securerandom"
@@ -16,6 +17,10 @@ type Project struct {
 	CreatedAt       time.Time `db:"created_at"`
 	UpdatedAt       time.Time `db:"updated_at"`
 	UnresolvedCount int       `db:"unresolved_count"`
+}
+
+func (p *Project) Channel() string {
+	return fmt.Sprintf("accounts.%d", p.AccountID)
 }
 
 // ProjectQuery is the options availabe to project searchs

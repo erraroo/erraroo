@@ -41,7 +41,7 @@ func main() {
 
 	api.Limiter = api.NoLimiter()
 	bus.Puller = puller.New(puller.Options{
-		MaxBacklogSize: 10,
+		MaxBacklogSize: 100,
 		Redis:          client,
 	})
 

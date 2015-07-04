@@ -1,8 +1,6 @@
 package usecases
 
 import (
-	"fmt"
-
 	"github.com/erraroo/erraroo/api/bus"
 	"github.com/erraroo/erraroo/logger"
 	"github.com/erraroo/erraroo/mailers"
@@ -62,7 +60,7 @@ func afterJsErrorProcessed(e *models.Event) error {
 			return err
 		}
 
-		bus.Push(accountChannel(project.AccountID), bus.Notifcation{
+		bus.Push(project.Channel(), bus.Notifcation{
 			Name:    "errors.update",
 			Payload: serializers.NewUpdateError(project, group),
 		})
@@ -95,8 +93,4 @@ func notifyUsersOfNewError(project *models.Project, group *models.Error) error {
 	}
 
 	return nil
-}
-
-func accountChannel(accountID int64) string {
-	return fmt.Sprintf("accounts.%d", accountID)
 }

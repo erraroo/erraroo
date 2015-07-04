@@ -52,3 +52,12 @@ func InvitationsShow(w http.ResponseWriter, r *http.Request, c *cx.Context) erro
 
 	return JSON(w, http.StatusOK, serializers.NewShowInvitation(invite))
 }
+
+func InvitationsIndex(w http.ResponseWriter, r *http.Request, c *cx.Context) error {
+	invitations, err := models.Invitations.ListForUser(c.User)
+	if err != nil {
+		logger.Error("usercases.InviteByEmail", "err", err)
+	}
+
+	return JSON(w, http.StatusCreated, serializers.NewInvitations(invitations))
+}

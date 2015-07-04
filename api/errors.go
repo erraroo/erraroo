@@ -3,7 +3,9 @@ package api
 import (
 	"net/http"
 
+	"github.com/erraroo/erraroo/api/bus"
 	"github.com/erraroo/erraroo/cx"
+	"github.com/erraroo/erraroo/logger"
 	"github.com/erraroo/erraroo/models"
 	"github.com/erraroo/erraroo/serializers"
 )
@@ -71,7 +73,18 @@ func ErrorsUpdate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error
 		return err
 	}
 
-	return JSON(w, http.StatusOK, serializers.NewUpdateError(project, group))
+	payload := serializers.NewUpdateError(project, group)
+
+	err = bus.Push(project.Channel(), bus.Notifcation{
+		Name:    "errors.update",
+		Payload: payload,
+	})
+
+	if err != nil {
+		logger.Error("bus.push", "err", err)
+	}
+
+	return JSON(w, http.StatusOK, payload)
 }
 
 // ErrorsShow returns the full group

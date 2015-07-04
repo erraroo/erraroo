@@ -10,6 +10,7 @@ import (
 	"github.com/erraroo/erraroo/logger"
 	"github.com/erraroo/erraroo/models"
 	"github.com/erraroo/erraroo/serializers"
+	"github.com/gorilla/mux"
 	"github.com/nerdyworm/puller"
 )
 
@@ -38,6 +39,35 @@ func MeHandler(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	return nil
 }
 
+func UsersShow(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
+	id := mux.Vars(r)["id"]
+
+	user := ctx.User
+
+	if id != "me" {
+		userID, err := StrToID(id)
+		if err != nil {
+			return err
+		}
+
+		user, err = models.Users.FindByID(userID)
+		if err != nil {
+			return err
+		}
+	}
+
+	if !ctx.User.CanSee(user) {
+		return models.ErrNotFound
+	}
+
+	prefs, err := models.Prefs.Get(user)
+	if err != nil {
+		return err
+	}
+
+	return JSON(w, http.StatusOK, serializers.NewShowUser(user, prefs))
+}
+
 func Backlog(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	err := r.ParseForm()
 	if err != nil {
@@ -50,7 +80,7 @@ func Backlog(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		channels[key] = int64(lastID)
 	}
 
-	backlog, err := bus.Pull(channels, 10*time.Second)
+	backlog, err := bus.Pull(channels, 60*time.Second)
 	if err != nil {
 		logger.Error("pulling backlog", "err", err)
 		return err

@@ -81,7 +81,9 @@ func accountForParams(params Signup) (*models.Account, error) {
 			return nil, err
 		}
 
-		return &models.Account{ID: invitation.AccountID}, nil
+		invitation.Accepted = true
+		err = models.Invitations.Update(invitation)
+		return &models.Account{ID: invitation.AccountID}, err
 	} else {
 		account, err := models.Accounts.Create()
 		if err != nil {
