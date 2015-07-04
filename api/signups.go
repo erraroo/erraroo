@@ -11,11 +11,14 @@ import (
 
 // SignupRequest an incoming sign up request
 type SignupRequest struct {
-	Signup Signup
+	Signup     Signup
+	invitation *models.Invitation
 }
 
 // Validate the request to ensure that it is acceptable
 func (s SignupRequest) Validate() (models.ValidationErrors, error) {
+	var err error
+
 	errs := models.NewValidationErrors()
 	if s.Signup.Email == "" {
 		errs.Add("Email", "can't be blank")
@@ -25,6 +28,17 @@ func (s SignupRequest) Validate() (models.ValidationErrors, error) {
 
 	if s.Signup.Password == "" {
 		errs.Add("Password", "can't be blank")
+	}
+
+	if s.Signup.Token != "" {
+		s.invitation, err = models.Invitations.FindByToken(s.Signup.Token)
+		if err != nil {
+			return errs, err
+		}
+
+		if s.invitation.Accepted {
+			errs.Add("Base", "Invitation has already been used")
+		}
 	}
 
 	return errs, nil
@@ -51,7 +65,7 @@ func SignupsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) erro
 		return errors
 	}
 
-	account, err := accountForParams(request.Signup)
+	account, err := accountForRequest(request)
 	if err != nil {
 		return err
 	}
@@ -74,16 +88,12 @@ func SignupsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) erro
 	return JSON(w, http.StatusCreated, serializers.NewShowUser(user, prefs))
 }
 
-func accountForParams(params Signup) (*models.Account, error) {
-	if params.Token != "" {
-		invitation, err := models.Invitations.FindByToken(params.Token)
-		if err != nil {
-			return nil, err
-		}
-
-		invitation.Accepted = true
-		err = models.Invitations.Update(invitation)
-		return &models.Account{ID: invitation.AccountID}, err
+func accountForRequest(request SignupRequest) (*models.Account, error) {
+	params := request.Signup
+	if request.invitation != nil {
+		request.invitation.Accepted = true
+		err := models.Invitations.Update(request.invitation)
+		return &models.Account{ID: request.invitation.AccountID}, err
 	} else {
 		account, err := models.Accounts.Create()
 		if err != nil {
