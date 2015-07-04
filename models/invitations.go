@@ -10,6 +10,7 @@ import (
 type InvitationsStore interface {
 	ListForUser(*User) ([]*Invitation, error)
 	Create(address string, user *User) (*Invitation, error)
+	FindByToken(string) (*Invitation, error)
 }
 
 type invitationsStore struct{ *Store }
@@ -51,6 +52,17 @@ func (s *invitationsStore) Create(to string, user *User) (*Invitation, error) {
 
 	if err != nil {
 		logger.Error("inserting into invitations", "err", err)
+	}
+
+	return invitation, err
+}
+
+func (s *invitationsStore) FindByToken(token string) (*Invitation, error) {
+	invitation := &Invitation{}
+	query := "select * from invitations where token = $1 limit 1"
+	err := s.Get(invitation, query, token)
+	if err != nil {
+		logger.Error("finding invitation by token", "token", token, "err", err)
 	}
 
 	return invitation, err

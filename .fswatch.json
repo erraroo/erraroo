@@ -5,9 +5,7 @@
     "depth": 20,
     "exclude": [],
     "include": ["\\.(go)$"],
-    "command": [
-        "bash", "-c", "go install . && erraroo development"
-    ],
+    "command": "go install . && erraroo development",
     "env": {
         "POWERD_BY": "github.com/codeskyblue/fswatch"
     },

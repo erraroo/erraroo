@@ -43,7 +43,4 @@ func TestInviteByEmail_DeliversEmail(t *testing.T) {
 	invite := invites[0]
 	assert.Equal(t, email, invite.Address)
 	assert.Contains(t, emailSender.sends[0]["body"], invite.Token)
-
-	// go to the link
-	// test api can create user
 }
