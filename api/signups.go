@@ -35,6 +35,7 @@ type Signup struct {
 	Email    string
 	Password string
 	Plan     string
+	Token    string
 }
 
 func SignupsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
@@ -50,12 +51,7 @@ func SignupsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) erro
 		return errors
 	}
 
-	account, err := models.Accounts.Create()
-	if err != nil {
-		return err
-	}
-
-	_, err = models.Plans.Create(account, request.Signup.Plan)
+	account, err := accountForParams(request.Signup)
 	if err != nil {
 		return err
 	}
@@ -76,4 +72,27 @@ func SignupsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) erro
 	}
 
 	return JSON(w, http.StatusCreated, serializers.NewShowUser(user, prefs))
+}
+
+func accountForParams(params Signup) (*models.Account, error) {
+	if params.Token != "" {
+		invitation, err := models.Invitations.FindByToken(params.Token)
+		if err != nil {
+			return nil, err
+		}
+
+		return &models.Account{ID: invitation.AccountID}, nil
+	} else {
+		account, err := models.Accounts.Create()
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = models.Plans.Create(account, params.Plan)
+		if err != nil {
+			return nil, err
+		}
+
+		return account, nil
+	}
 }

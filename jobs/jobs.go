@@ -1,12 +1,6 @@
 package jobs
 
-import (
-	"encoding/json"
-
-	"github.com/erraroo/erraroo/cx"
-	"github.com/erraroo/erraroo/usecases"
-	"github.com/nerdyworm/rsq"
-)
+import "github.com/nerdyworm/rsq"
 
 var queue rsq.Queue
 
@@ -24,14 +18,4 @@ func Push(name string, payload []byte) error {
 
 func Shutdown() error {
 	return queue.Shutdown()
-}
-
-func EventProcess(job *rsq.Job, ctx *cx.Context) error {
-	var id int64
-	err := json.Unmarshal(job.Payload, &id)
-	if err != nil {
-		return err
-	}
-
-	return usecases.ProcessEvent(id)
 }

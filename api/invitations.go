@@ -7,6 +7,7 @@ import (
 	"github.com/erraroo/erraroo/logger"
 	"github.com/erraroo/erraroo/models"
 	"github.com/erraroo/erraroo/serializers"
+	"github.com/erraroo/erraroo/usecases"
 	"github.com/gorilla/mux"
 )
 
@@ -31,9 +32,9 @@ func InvitationsCreate(w http.ResponseWriter, r *http.Request, c *cx.Context) er
 		return errors
 	}
 
-	invitation, err := models.Invitations.Create(request.Invitation.Address, c.User)
+	invitation, err := usecases.InviteByEmail(c.User, request.Invitation.Address)
 	if err != nil {
-		logger.Error("creating invitation", "err", err)
+		logger.Error("usercases.InviteByEmail", "err", err)
 	}
 
 	return JSON(w, http.StatusCreated, serializers.NewShowInvitation(invitation))

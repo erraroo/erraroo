@@ -83,8 +83,8 @@ func DeliverInvitation(invitation *models.Invitation) error {
 
 	view := invitationView{
 		From:    user,
-		URL:     fmt.Sprintf("%s/invitations/%s", config.MailerBaseURL, invitation.Token),
-		Subject: "Erraroo Invitation!",
+		URL:     fmt.Sprintf("%s/invitation/%s", config.MailerBaseURL, invitation.Token),
+		Subject: "[erraroo] Invitation!",
 	}
 
 	err = tmpl.Execute(body, view)

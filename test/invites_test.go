@@ -9,7 +9,7 @@ import (
 
 func TestCreateInvitation(t *testing.T) {
 	request := api.CreateInvitationRequest{}
-	request.Invitation.To = "ben@nerdyworm.com"
+	request.Invitation.Address = "ben@nerdyworm.com"
 
 	req, res := rr("POST", "/api/v1/invitations", request)
 	req.Header.Add("Authorization", _token)

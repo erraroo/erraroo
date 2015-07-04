@@ -6,11 +6,14 @@ import (
 
 	"github.com/erraroo/erraroo/config"
 	"github.com/erraroo/erraroo/emailer"
+	"github.com/erraroo/erraroo/jobs"
 	"github.com/erraroo/erraroo/models"
+	"github.com/nerdyworm/rsq"
 )
 
 var (
 	emailSender = &mockSender{}
+	queue       = rsq.NewMemoryAdapter()
 )
 
 func TestMain(m *testing.M) {
@@ -23,6 +26,8 @@ func TestMain(m *testing.M) {
 
 	emailer.Use(emailSender)
 	emailSender.Clear()
+
+	jobs.Use(queue)
 
 	ret := m.Run()
 	os.Exit(ret)
