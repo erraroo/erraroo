@@ -1,7 +1,6 @@
 package models
 
 import (
-	"log"
 	"math"
 	"net/url"
 	"regexp"
@@ -70,7 +69,7 @@ func (r *Resource) Context(lineno int, column int) SourceContext {
 func (r *Resource) contextFromSourceMap(lineno, column int) SourceContext {
 	source, _, line, col, ok := r.SourceMap.Source(lineno, column)
 	if !ok {
-		log.Println("not sure why not ok...")
+		logger.Error("could not parse source map", "url", r.SourceMapURL())
 	}
 
 	context := SourceContext{}
@@ -96,7 +95,7 @@ func (r *Resource) contextFromSource(lineno, column int) SourceContext {
 
 	u, err := url.Parse(r.URL)
 	if err != nil {
-		log.Println(err)
+		logger.Error("could not parse url", "url", r.URL)
 	}
 
 	context.OrigFile = u.Path
@@ -106,7 +105,7 @@ func (r *Resource) contextFromSource(lineno, column int) SourceContext {
 func getSourceContext(lines []string, lineno int, linesOfContext int) ([]string, string, []string) {
 	// JavaScript line numbers start from 1
 	if lineno > 0 {
-		lineno -= 1
+		lineno--
 	}
 
 	lenLines := len(lines)

@@ -7,6 +7,8 @@ import (
 	"github.com/tuvistavie/securerandom"
 )
 
+// PasswordRecoversStore stores password reset tokens for
+// users that have forgotten their passwords.
 type PasswordRecoversStore interface {
 	Create(user *User) (*PasswordRecover, error)
 	FindByToken(string) (*PasswordRecover, error)
@@ -64,14 +66,12 @@ func (s *passwordRecoversStore) FindByToken(token string) (*PasswordRecover, err
 
 func (s *passwordRecoversStore) Use(pr *PasswordRecover, pw string) error {
 	pr.User.SetPassword(pw)
-	err := Users.Update(pr.User)
-	if err != nil {
+	if err := Users.Update(pr.User); err != nil {
 		return err
 	}
 
 	query := "update password_recovers set used='t' where user_id = $1"
-	_, err = s.Exec(query, pr.User.ID)
-	if err != nil {
+	if _, err := s.Exec(query, pr.User.ID); err != nil {
 		logger.Error("updating password_recovers", "token", pr.Token, "err", err)
 		return err
 	}
