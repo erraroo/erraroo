@@ -77,6 +77,7 @@ func (a *App) setupMux() {
 	a.Router.Handle("/api/v1/invitations/{token}", a.Handler(api.InvitationsShow)).Methods("GET")
 	a.Router.Handle("/api/v1/users/{id}", a.AuthroziedHandler(api.UsersShow)).Methods("GET")
 	a.Router.Handle("/api/v1/prefs/{id}", a.AuthroziedHandler(api.PrefsUpdate)).Methods("PUT")
+	a.Router.Handle("/api/v1/passwords", a.AuthroziedHandler(api.PasswordsCreate)).Methods("POST")
 	a.Router.Handle("/api/v1/timings", a.AuthroziedHandler(api.TimingsIndex)).Methods("GET")
 	a.Router.Handle("/api/v1/backlog", a.AuthroziedHandler(api.Backlog)).Methods("POST")
 	a.Router.HandleFunc("/healthcheck", api.Healthcheck).Methods("GET")

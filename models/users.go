@@ -13,6 +13,7 @@ type UsersStore interface {
 	FindByEmail(email string) (*User, error)
 	Create(email, password string, account *Account) (*User, error)
 	ByAccountID(id int64) ([]*User, error)
+	Update(*User) error
 }
 
 type usersStore struct {
@@ -71,4 +72,10 @@ func (s usersStore) ByAccountID(id int64) ([]*User, error) {
 	users := []*User{}
 	query := "select * from users where account_id=$1"
 	return users, s.Select(&users, query, id)
+}
+
+func (s usersStore) Update(user *User) error {
+	query := "update users set encrypted_password=$1 where id = $2"
+	_, err := s.Exec(query, user.EncryptedPassword, user.ID)
+	return err
 }

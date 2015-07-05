@@ -53,6 +53,18 @@ func (t *Timing) Average(payload string) error {
 	return Timings.Update(t)
 }
 
+func (t *Timing) PreProcess() {
+	data := timingData{}
+	json.Unmarshal([]byte(t.Payload), &data)
+
+	for key := range data {
+		data[key] = toFixed(data[key], 0)
+	}
+
+	payload, _ := json.Marshal(data)
+	t.Payload = string(payload)
+}
+
 func toFixed(num float64, precision int) float64 {
 	output := math.Pow(10, float64(precision))
 	return float64(round(num*output)) / output
