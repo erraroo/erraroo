@@ -17,6 +17,7 @@ func Setup(config string) error {
 	Events = &eventsStore{store}
 	Errors = &errorsStore{store}
 	Invitations = &invitationsStore{store}
+	PasswordRecovers = &passwordRecoversStore{store}
 	Plans = &plansStore{store}
 	Prefs = &prefsStore{store}
 	Projects = &projectsStore{store}

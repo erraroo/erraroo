@@ -116,3 +116,45 @@ const invitationTemplate = `
 </html>
 {{end}}
 `
+
+func DeliverPasswordRecover(pr *models.PasswordRecover) error {
+	body := bytes.NewBufferString("")
+
+	tmpl, err := template.New("T").Parse(passwordRecoverTemplate)
+	if err != nil {
+		return err
+	}
+
+	view := passwordRecoverView{
+		URL:     fmt.Sprintf("%s/recover-password/%s", config.MailerBaseURL, pr.Token),
+		Subject: "[erraroo] Password Recovery",
+	}
+
+	err = tmpl.Execute(body, view)
+	if err != nil {
+		return err
+	}
+
+	return emailer.Send(pr.User.Email, view.Subject, body.String())
+}
+
+type passwordRecoverView struct {
+	URL     string
+	Subject string
+}
+
+const passwordRecoverTemplate = `
+{{define "T"}}
+<html>
+	<head>
+	</head>
+	<body>
+		<p>Hello New Friend!</p>
+		<p>You just requested a password recovery.  Here you go :)</p>
+		<p>
+			<a href="{{.URL}}">{{.URL}}</a>
+		</p>
+	</body>
+</html>
+{{end}}
+`
