@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"gopkg.in/redis.v3"
 
@@ -35,7 +36,9 @@ func main() {
 	}))
 
 	client := redis.NewClient(&redis.Options{
-		Addr: config.Redis,
+		Addr:        config.Redis,
+		PoolSize:    10,
+		PoolTimeout: 5 * time.Second,
 	})
 	defer client.Close()
 

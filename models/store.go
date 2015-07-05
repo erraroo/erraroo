@@ -47,6 +47,8 @@ func NewStore(config string) (*Store, error) {
 		return nil, err
 	}
 
+	db.SetMaxOpenConns(10)
+
 	return &Store{db}, nil
 }
 
