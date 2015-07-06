@@ -72,6 +72,7 @@ func (a *App) setupMux() {
 	a.Router.Handle("/api/v1/errors", a.AuthroziedHandler(api.ErrorsIndex)).Methods("GET")
 	a.Router.Handle("/api/v1/errors/{id}", a.AuthroziedHandler(api.ErrorsShow)).Methods("GET")
 	a.Router.Handle("/api/v1/errors/{id}", a.AuthroziedHandler(api.ErrorsUpdate)).Methods("PUT")
+	a.Router.Handle("/api/v1/errors/{id}/tags", a.AuthroziedHandler(api.ErrorTagsIndex)).Methods("GET")
 	a.Router.Handle("/api/v1/invitations", a.AuthroziedHandler(api.InvitationsIndex)).Methods("GET")
 	a.Router.Handle("/api/v1/invitations", a.Handler(api.InvitationsCreate)).Methods("POST")
 	a.Router.Handle("/api/v1/invitations/{token}", a.Handler(api.InvitationsShow)).Methods("GET")

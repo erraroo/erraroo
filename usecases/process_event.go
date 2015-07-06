@@ -9,60 +9,60 @@ import (
 )
 
 func ProcessEvent(eventID int64) error {
-	e, err := models.Events.FindByID(eventID)
+	event, err := models.Events.FindByID(eventID)
 	if err != nil {
 		return err
 	}
 
-	err = e.PostProcess()
+	err = event.PostProcess()
 	if err != nil {
-		logger.Error("event.PostProcess", "err", err, "event.ID", e.ID)
+		logger.Error("event.PostProcess", "err", err, "event.ID", event.ID)
 		return err
 	}
 
-	if e.Kind == "js.error" {
-		return afterJsErrorProcessed(e)
+	if event.Kind == "js.error" {
+		return afterJsErrorProcessed(event)
 	}
 
 	return nil
 }
 
-func afterJsErrorProcessed(e *models.Event) error {
-	p, err := models.Projects.FindByID(e.ProjectID)
+func afterJsErrorProcessed(event *models.Event) error {
+	p, err := models.Projects.FindByID(event.ProjectID)
 	if err != nil {
 		return err
 	}
 
-	group, err := models.Errors.FindOrCreate(p, e)
+	e, err := models.Errors.FindOrCreate(p, event)
 	if err != nil {
-		logger.Error("finding or creating error group", "err", err)
+		logger.Error("finding or creating error e", "err", err)
 		return err
 	}
 
-	if group.ShouldNotify() {
-		err = notifyUsersOfNewError(p, group)
+	if e.ShouldNotify() {
+		err = notifyUsersOfNewError(p, e)
 		if err != nil {
-			logger.Error("notifying users", "err", err, "project", p.ID, "group", group.ID)
+			logger.Error("notifying users", "err", err, "project", p.ID, "e", e.ID)
 			return err
 		}
 	}
 
-	err = models.Errors.Touch(group)
+	err = models.Errors.Touch(e)
 	if err != nil {
-		logger.Error("touching group", "err", err, "group", group.ID)
+		logger.Error("touching e", "err", err, "e", e.ID)
 		return err
 	}
 
-	if !group.Muted {
-		project, err := models.Projects.FindByID(group.ProjectID)
-		if err != nil {
-			logger.Error("finding project", "err", err, "group", group.ID, "project", group.ProjectID)
-			return err
-		}
+	err = models.Errors.AddTags(e, event.Tags())
+	if err != nil {
+		logger.Error("adding tags", "err", err, "e", e.ID)
+		return err
+	}
 
-		bus.Push(project.Channel(), bus.Notifcation{
+	if !e.Muted {
+		bus.Push(p.Channel(), bus.Notifcation{
 			Name:    "errors.update",
-			Payload: serializers.NewUpdateError(project, group),
+			Payload: serializers.NewUpdateError(p, e),
 		})
 	}
 

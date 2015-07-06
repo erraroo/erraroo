@@ -25,6 +25,13 @@ type library struct {
 	Version string `json:"version"`
 }
 
+func (l library) Tag() Tag {
+	return Tag{
+		Key:   "js.library." + l.Name,
+		Value: l.Version,
+	}
+}
+
 type plugin struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -125,6 +132,32 @@ func (e *jsErrorEvent) Message() string {
 	return jse.Trace.Message
 }
 
+func (e *jsErrorEvent) Tags() []Tag {
+	js, _ := e.unmarshal()
+
+	tags := []Tag{}
+
+	for _, l := range js.Libaries {
+		tags = append(tags, l.Tag())
+	}
+
+	if js.UserAgent != "" {
+		tags = append(tags, Tag{
+			Key:   "js.useragent",
+			Value: js.UserAgent,
+		})
+	}
+
+	if js.URL != "" {
+		tags = append(tags, Tag{
+			Key:   "js.url",
+			Value: js.URL,
+		})
+	}
+
+	return tags
+}
+
 func populateFrameContext(f *frame, resources *resourcesStore) error {
 	resource, err := resources.FindByURL(f.URL)
 	if err != nil {
@@ -162,6 +195,10 @@ func (e *jsTimingEvent) Message() string {
 	return "timing event recorded"
 }
 
+func (e *jsTimingEvent) Tags() []Tag {
+	return []Tag{}
+}
+
 type jsLogEvent struct{ *Event }
 
 func (e *jsLogEvent) IsAsync() bool {
@@ -187,4 +224,8 @@ func (e *jsLogEvent) Name() string {
 
 func (e *jsLogEvent) Message() string {
 	return "log event"
+}
+
+func (e *jsLogEvent) Tags() []Tag {
+	return []Tag{}
 }

@@ -33,6 +33,10 @@ func (e *Event) PostProcess() error {
 	return e.handler().PostProcess()
 }
 
+func (e *Event) Tags() []Tag {
+	return e.handler().Tags()
+}
+
 func (e *Event) handler() EventHandler {
 	switch e.Kind {
 	case "js.error":
@@ -53,4 +57,5 @@ type EventHandler interface {
 	Name() string
 	PreProcess() error
 	PostProcess() error
+	Tags() []Tag
 }

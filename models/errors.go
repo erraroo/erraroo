@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/erraroo/erraroo/logger"
@@ -14,6 +15,7 @@ type ErrorsStore interface {
 	FindByID(int64) (*Error, error)
 	Update(*Error) error
 	Touch(*Error) error
+	AddTags(*Error, []Tag) error
 }
 
 type ErrorQuery struct {
@@ -24,6 +26,7 @@ type ErrorQuery struct {
 
 type ErrorResults struct {
 	Errors []*Error
+	Tags   []TagValue
 	Total  int64
 	Query  ErrorQuery
 }
@@ -159,5 +162,39 @@ func (s *errorsStore) FindByID(id int64) (*Error, error) {
 		return nil, err
 	}
 
+	query = "select * from error_tag_values where error_id = $1"
+	err = s.Select(&group.Tags, query, id)
+	if err != nil {
+		return nil, err
+	}
+
 	return group, nil
+}
+
+func (s *errorsStore) AddTags(e *Error, tags []Tag) error {
+	for _, tag := range tags {
+		update := "update project_tags set occurrences=occurrences+1, updated_at=now_utc() where key=$1 and project_id=$2"
+		insert := "insert into project_tags (key, project_id) select $1, $2"
+		upsert := "with upsert as (%s returning *) %s where not exists (select * from upsert);"
+		query := fmt.Sprintf(upsert, update, insert)
+
+		_, err := s.Exec(query, tag.Key, e.ProjectID)
+		if err != nil {
+			logger.Error("upserting project_tag", "err", err)
+			return err
+		}
+
+		update = "update error_tag_values set occurrences=occurrences+1, updated_at=now_utc() where key=$1 and project_id=$2 and error_id=$3 and value=$4"
+		insert = "insert into error_tag_values (key, project_id, error_id, value) select $1,$2,$3,$4"
+		upsert = "with upsert as (%s returning *) %s where not exists (select * from upsert);"
+		query = fmt.Sprintf(upsert, update, insert)
+
+		_, err = s.Exec(query, tag.Key, e.ProjectID, e.ID, tag.Value)
+		if err != nil {
+			logger.Error("inserting error_tag_values", "err", err)
+			return err
+		}
+	}
+
+	return nil
 }

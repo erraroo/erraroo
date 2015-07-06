@@ -15,7 +15,8 @@ type Error struct {
 	CreatedAt   time.Time `db:"created_at"`
 	UpdatedAt   time.Time `db:"updated_at"`
 
-	WasInserted bool `db:"-"`
+	WasInserted bool       `db:"-" json:"-"`
+	Tags        []TagValue `db:"-" json:"-"`
 }
 
 type ErrorQueryResults struct {
@@ -34,12 +35,12 @@ func newError(p *Project, e *Event) *Error {
 	}
 }
 
-func (g *Error) ShouldNotify() bool {
-	if g.WasInserted {
+func (e *Error) ShouldNotify() bool {
+	if e.WasInserted {
 		return true
 	}
 
-	if g.Resolved && !g.Muted {
+	if e.Resolved && !e.Muted {
 		return true
 	}
 

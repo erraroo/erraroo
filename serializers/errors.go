@@ -1,6 +1,7 @@
 package serializers
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/erraroo/erraroo/models"
@@ -8,6 +9,11 @@ import (
 
 type Error struct {
 	*models.Error
+	Links ErrorLinks `json:"links"`
+}
+
+type ErrorLinks struct {
+	Tags string `json:"tags"`
 }
 
 type ShowError struct {
@@ -19,24 +25,37 @@ type UpdateError struct {
 	Projects []Project
 }
 
-func NewShowError(g *models.Error) ShowError {
+func NewError(e *models.Error) Error {
+	links := ErrorLinks{
+		Tags: fmt.Sprintf("/api/v1/errors/%d/tags", e.ID),
+	}
+
+	return Error{e, links}
+}
+
+func NewShowError(e *models.Error) ShowError {
 	return ShowError{
-		Error: Error{g},
+		Error: NewError(e),
 	}
 }
 
-func NewUpdateError(p *models.Project, g *models.Error) UpdateError {
+func NewUpdateError(p *models.Project, e *models.Error) UpdateError {
 	return UpdateError{
-		Error: Error{g},
+		Error: NewError(e),
 		Projects: []Project{
 			Project{p},
 		},
 	}
 }
 
+type Tag struct {
+	models.TagValue
+}
+
 type Errors struct {
 	Errors []Error
-	Meta   struct {
+	//Tags   []Tag
+	Meta struct {
 		Pagination Pagination
 	}
 }
@@ -52,8 +71,19 @@ func NewErrors(results models.ErrorResults) Errors {
 	groups := Errors{}
 	groups.Errors = make([]Error, len(results.Errors))
 
-	for i, p := range results.Errors {
-		groups.Errors[i] = Error{p}
+	//mapping := make(map[int64][]int64)
+	//for i, t := range results.Tags {
+	//groups.Tags[i] = Tag{t}
+
+	//if ids, ok := mapping[t.ErrorID]; ok {
+	//mapping[t.ErrorID] = append(ids, t.ID)
+	//} else {
+	//mapping[t.ErrorID] = []int64{t.ID}
+	//}
+	//}
+
+	for i, e := range results.Errors {
+		groups.Errors[i] = NewError(e)
 	}
 
 	pages := math.Ceil(float64(results.Total) / float64(results.Query.PerPageOrDefault()))
