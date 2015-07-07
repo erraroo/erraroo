@@ -21,6 +21,7 @@ type ErrorsStore interface {
 type ErrorQuery struct {
 	ProjectID int64
 	Status    string
+	Tags      []Tag
 	QueryOptions
 }
 
@@ -111,29 +112,38 @@ func (s *errorsStore) FindQuery(q ErrorQuery) (ErrorResults, error) {
 	errors.Errors = []*Error{}
 
 	countQuery := builder.Select("count(*)").From("errors")
-	findQuery := builder.Select("*").From("errors")
+	findQuery := builder.Select("errors.*").From("errors")
 
-	countQuery = countQuery.Where("project_id=?", q.ProjectID)
-	findQuery = findQuery.Where("project_id=?", q.ProjectID)
+	countQuery = countQuery.Where("errors.project_id=?", q.ProjectID)
+	findQuery = findQuery.Where("errors.project_id=?", q.ProjectID)
 
 	if q.Status == "unresolved" {
-		countQuery = countQuery.Where("resolved=? AND muted=?", false, false)
-		findQuery = findQuery.Where("resolved=? AND muted=?", false, false)
+		countQuery = countQuery.Where("errors.resolved=? AND errors.muted=?", false, false)
+		findQuery = findQuery.Where("errors.resolved=? AND errors.muted=?", false, false)
 	}
 
 	if q.Status == "resolved" {
-		countQuery = countQuery.Where("resolved=? AND muted=?", true, false)
-		findQuery = findQuery.Where("resolved=? AND muted=?", true, false)
+		countQuery = countQuery.Where("errors.resolved=? AND errors.muted=?", true, false)
+		findQuery = findQuery.Where("errors.resolved=? AND errors.muted=?", true, false)
 	}
 
 	if q.Status == "muted" {
-		countQuery = countQuery.Where("muted=?", true)
-		findQuery = findQuery.Where("muted=?", true)
+		countQuery = countQuery.Where("errors.muted=?", true)
+		findQuery = findQuery.Where("errors.muted=?", true)
+	}
+
+	if len(q.Tags) > 0 {
+		findQuery = findQuery.Join("error_tag_values on error_tag_values.error_id = errors.id")
+		countQuery = countQuery.Join("error_tag_values on error_tag_values.error_id = errors.id")
+
+		for _, tag := range q.Tags {
+			findQuery = findQuery.Where("error_tag_values.key=? and error_tag_values.value=?", tag.Key, tag.Value)
+			countQuery = countQuery.Where("error_tag_values.key=? and error_tag_values.value=?", tag.Key, tag.Value)
+		}
 	}
 
 	findQuery = findQuery.Limit(uint64(q.PerPageOrDefault())).Offset(uint64(q.Offset()))
-
-	findQuery = findQuery.OrderBy("last_seen_at desc")
+	findQuery = findQuery.OrderBy("errors.last_seen_at desc")
 
 	query, args, _ := findQuery.ToSql()
 	err := s.Select(&errors.Errors, query, args...)
@@ -173,25 +183,47 @@ func (s *errorsStore) FindByID(id int64) (*Error, error) {
 
 func (s *errorsStore) AddTags(e *Error, tags []Tag) error {
 	for _, tag := range tags {
-		update := "update project_tags set occurrences=occurrences+1, updated_at=now_utc() where key=$1 and project_id=$2"
-		insert := "insert into project_tags (key, project_id) select $1, $2"
+		update := "update project_keys set values_seen=values_seen+1 where project_id=$1 and key=$2"
+		insert := "insert into project_keys (project_id, key, label) select $1,$2,$3"
 		upsert := "with upsert as (%s returning *) %s where not exists (select * from upsert);"
 		query := fmt.Sprintf(upsert, update, insert)
 
-		_, err := s.Exec(query, tag.Key, e.ProjectID)
+		_, err := s.Exec(query, e.ProjectID, tag.Key, tag.Label)
 		if err != nil {
-			logger.Error("upserting project_tag", "err", err)
+			logger.Error("inserting project_keys", "err", err)
 			return err
 		}
 
-		update = "update error_tag_values set occurrences=occurrences+1, updated_at=now_utc() where key=$1 and project_id=$2 and error_id=$3 and value=$4"
-		insert = "insert into error_tag_values (key, project_id, error_id, value) select $1,$2,$3,$4"
+		update = "update project_key_values set times_seen=times_seen+1, last_seen=now_utc() where project_id=$1 and key=$2 and value=$3"
+		insert = "insert into project_key_values (project_id, key, value) select $1,$2,$3"
 		upsert = "with upsert as (%s returning *) %s where not exists (select * from upsert);"
 		query = fmt.Sprintf(upsert, update, insert)
 
-		_, err = s.Exec(query, tag.Key, e.ProjectID, e.ID, tag.Value)
+		_, err = s.Exec(query, e.ProjectID, tag.Key, tag.Value)
 		if err != nil {
-			logger.Error("inserting error_tag_values", "err", err)
+			logger.Error("inserting project_key_values", "err", err)
+			return err
+		}
+
+		update = "update error_keys set values_seen=values_seen+1 where project_id=$1 and key=$2 and error_id=$3"
+		insert = "insert into error_keys (project_id, key, error_id) select $1,$2,$3"
+		upsert = "with upsert as (%s returning *) %s where not exists (select * from upsert);"
+		query = fmt.Sprintf(upsert, update, insert)
+
+		_, err = s.Exec(query, e.ProjectID, tag.Key, e.ID)
+		if err != nil {
+			logger.Error("inserting error_keys", "err", err)
+			return err
+		}
+
+		update = "update error_key_values set times_seen=times_seen+1,last_seen=now_utc() where project_id=$1 and key=$2 and error_id=$3 and value=$4"
+		insert = "insert into error_key_values (project_id, key, error_id, value) select $1,$2,$3,$4"
+		upsert = "with upsert as (%s returning *) %s where not exists (select * from upsert);"
+		query = fmt.Sprintf(upsert, update, insert)
+
+		_, err = s.Exec(query, e.ProjectID, tag.Key, e.ID, tag.Value)
+		if err != nil {
+			logger.Error("inserting error_key_values", "err", err)
 			return err
 		}
 	}

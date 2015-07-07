@@ -29,6 +29,7 @@ func (l library) Tag() Tag {
 	return Tag{
 		Key:   "js.library." + l.Name,
 		Value: l.Version,
+		Label: "Library",
 	}
 }
 
@@ -145,6 +146,7 @@ func (e *jsErrorEvent) Tags() []Tag {
 		tags = append(tags, Tag{
 			Key:   "js.useragent",
 			Value: js.UserAgent,
+			Label: "UserAgent",
 		})
 	}
 
@@ -152,6 +154,7 @@ func (e *jsErrorEvent) Tags() []Tag {
 		tags = append(tags, Tag{
 			Key:   "js.url",
 			Value: js.URL,
+			Label: "URL",
 		})
 	}
 

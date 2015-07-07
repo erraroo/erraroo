@@ -5,6 +5,7 @@ import "time"
 type Tag struct {
 	Key   string
 	Value string
+	Label string
 }
 
 type TagValue struct {
