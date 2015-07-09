@@ -31,10 +31,10 @@ func (s *timingsStore) Create(project *Project, data string) (*Timing, error) {
 }
 
 func (s *timingsStore) Update(t *Timing) error {
-	return s.dbGorm.Save(t).Error
+	return s.Save(t).Error
 }
 
 func (s *timingsStore) Last7Days(project *Project) ([]*Timing, error) {
 	timings := []*Timing{}
-	return timings, s.dbGorm.Where("project_id = ? and created_at > now_utc()::date - interval '7d'", project.ID).Find(&timings).Error
+	return timings, s.Where("project_id = ? and created_at > now_utc()::date - interval '7d'", project.ID).Find(&timings).Error
 }

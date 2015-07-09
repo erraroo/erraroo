@@ -34,7 +34,7 @@ type errorsStore struct{ *Store }
 func (s *errorsStore) FindOrCreate(p *Project, e *Event) (*Error, error) {
 	er := &Error{}
 
-	out := s.dbGorm.FirstOrCreate(&er, Error{
+	out := s.FirstOrCreate(&er, Error{
 		Checksum:  e.Checksum,
 		ProjectID: p.ID,
 	})
@@ -58,7 +58,7 @@ func (s *errorsStore) Touch(g *Error) error {
 }
 
 func (s *errorsStore) Update(e *Error) error {
-	return s.dbGorm.Save(e).Error
+	return s.Save(e).Error
 }
 
 func (s *errorsStore) FindQuery(q ErrorQuery) (ErrorResults, error) {
@@ -67,7 +67,7 @@ func (s *errorsStore) FindQuery(q ErrorQuery) (ErrorResults, error) {
 		Errors: []*Error{},
 	}
 
-	scope := s.dbGorm.Table("errors")
+	scope := s.Table("errors")
 	scope = scope.Where("errors.project_id=?", q.ProjectID)
 
 	switch q.Status {
@@ -97,7 +97,7 @@ func (s *errorsStore) FindQuery(q ErrorQuery) (ErrorResults, error) {
 
 func (s *errorsStore) FindByID(id int64) (*Error, error) {
 	e := &Error{}
-	o := s.dbGorm.First(&e, id)
+	o := s.First(&e, id)
 	if o.RecordNotFound() {
 		return nil, ErrNotFound
 	}

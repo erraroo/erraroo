@@ -59,7 +59,7 @@ func (s *projectsStore) Create(name string, accountID int64) (*Project, error) {
 		AccountID: accountID,
 	}
 
-	return project, s.dbGorm.Save(project).Error
+	return project, s.Save(project).Error
 }
 
 func (s *projectsStore) GenerateToken() (string, error) {
@@ -85,7 +85,7 @@ func (s *projectsStore) GenerateToken() (string, error) {
 func (s *projectsStore) FindByToken(token string) (*Project, error) {
 	project := &Project{}
 
-	o := s.dbGorm.Where("token=?", token).First(&project)
+	o := s.Where("token=?", token).First(&project)
 	if o.RecordNotFound() {
 		return nil, ErrNotFound
 	}
@@ -98,7 +98,7 @@ const unresolvedCount = "(select count(*) from errors where errors.project_id = 
 func (s *projectsStore) FindByID(id int64) (*Project, error) {
 	project := &Project{}
 	sel := []string{"projects.*", unresolvedCount}
-	out := s.dbGorm.Where("projects.id=?", id).Select(sel).Find(&project)
+	out := s.Where("projects.id=?", id).Select(sel).Find(&project)
 	if out.RecordNotFound() {
 		return nil, ErrNotFound
 	}
@@ -109,10 +109,10 @@ func (s *projectsStore) FindByID(id int64) (*Project, error) {
 func (s *projectsStore) ByAccountID(id int64) ([]*Project, error) {
 	projects := []*Project{}
 	sel := []string{"projects.*", unresolvedCount}
-	out := s.dbGorm.Where("projects.account_id=?", id).Select(sel).Find(&projects)
+	out := s.Where("projects.account_id=?", id).Select(sel).Find(&projects)
 	return projects, out.Error
 }
 
 func (s *projectsStore) Update(project *Project) error {
-	return s.dbGorm.Save(project).Error
+	return s.Save(project).Error
 }

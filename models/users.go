@@ -23,7 +23,7 @@ var ErrNotFound = errors.New("not found")
 func (s usersStore) FindByID(id int64) (*User, error) {
 	u := &User{}
 
-	o := s.dbGorm.First(&u, id)
+	o := s.First(&u, id)
 	if o.RecordNotFound() {
 		return nil, ErrNotFound
 	}
@@ -36,7 +36,7 @@ func (s usersStore) FindByID(id int64) (*User, error) {
 }
 
 func (s *usersStore) Insert(user *User) error {
-	return s.dbGorm.Save(user).Error
+	return s.Save(user).Error
 }
 
 func (s *usersStore) Exists(email string) bool {
@@ -47,7 +47,7 @@ func (s *usersStore) Exists(email string) bool {
 func (s usersStore) FindByEmail(email string) (*User, error) {
 	u := &User{}
 
-	o := s.dbGorm.Where("lower(email) = lower(?)", email).First(&u)
+	o := s.Where("lower(email) = lower(?)", email).First(&u)
 	if o.RecordNotFound() {
 		return nil, ErrNotFound
 	}
@@ -62,14 +62,14 @@ func (s usersStore) FindByEmail(email string) (*User, error) {
 func (s usersStore) Create(email, password string, account *Account) (*User, error) {
 	user := NewUser(email, password)
 	user.AccountID = account.ID
-	return user, s.dbGorm.Save(user).Error
+	return user, s.Save(user).Error
 }
 
 func (s usersStore) ByAccountID(id int64) ([]*User, error) {
 	users := []*User{}
-	return users, s.dbGorm.Where("account_id=?", id).Find(&users).Error
+	return users, s.Where("account_id=?", id).Find(&users).Error
 }
 
 func (s usersStore) Update(user *User) error {
-	return s.dbGorm.Save(user).Error
+	return s.Save(user).Error
 }

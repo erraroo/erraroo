@@ -54,13 +54,13 @@ func (s *eventsStore) Create(token, kind, data string) (*Event, error) {
 
 func (s *eventsStore) ListForProject(p *Project) ([]*Event, error) {
 	events := []*Event{}
-	query := s.dbGorm.Where("project_id=?", p.ID).Order("created_at desc").Limit(100)
+	query := s.Where("project_id=?", p.ID).Order("created_at desc").Limit(100)
 	return events, query.Find(&events).Error
 }
 
 func (s *eventsStore) FindByID(id int64) (*Event, error) {
 	e := &Event{}
-	o := s.dbGorm.First(&e, id)
+	o := s.First(&e, id)
 	if o.RecordNotFound() {
 		return nil, ErrNotFound
 	}
@@ -68,7 +68,7 @@ func (s *eventsStore) FindByID(id int64) (*Event, error) {
 }
 
 func (s *eventsStore) Update(e *Event) error {
-	return s.dbGorm.Save(e).Error
+	return s.Save(e).Error
 }
 
 type EventQuery struct {
@@ -90,7 +90,7 @@ func (s *eventsStore) FindQuery(q EventQuery) (EventResults, error) {
 		Events: []*Event{},
 	}
 
-	scope := s.dbGorm.Table("events")
+	scope := s.Table("events")
 	scope = scope.Where("events.project_id=?", q.ProjectID)
 
 	if q.Checksum != "" {

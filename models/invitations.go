@@ -57,7 +57,7 @@ func (s *invitationsStore) Create(to string, user *User) (*Invitation, error) {
 func (s *invitationsStore) FindByToken(token string) (*Invitation, error) {
 	invitation := &Invitation{}
 
-	o := s.dbGorm.Where("token=?", token).First(&invitation)
+	o := s.Where("token=?", token).First(&invitation)
 	if o.RecordNotFound() {
 		return nil, ErrNotFound
 	}
@@ -70,7 +70,7 @@ func (s *invitationsStore) FindByToken(token string) (*Invitation, error) {
 }
 
 func (s *invitationsStore) Update(i *Invitation) error {
-	if err := s.dbGorm.Save(i).Error; err != nil {
+	if err := s.Save(i).Error; err != nil {
 		logger.Error("updating invitation", "token", i.Token, "err", err)
 		return err
 	}

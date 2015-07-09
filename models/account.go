@@ -16,7 +16,7 @@ type accountsStore struct{ *Store }
 
 func (s *accountsStore) Create() (*Account, error) {
 	account := &Account{}
-	if err := s.dbGorm.Create(account).Error; err != nil {
+	if err := s.DB.Create(account).Error; err != nil {
 		logger.Error("creating account", "err", err)
 		return nil, err
 	}
