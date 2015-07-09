@@ -1,8 +1,6 @@
 package usecases
 
 import (
-	"encoding/json"
-
 	"github.com/erraroo/erraroo/jobs"
 	"github.com/erraroo/erraroo/logger"
 	"github.com/erraroo/erraroo/mailers"
@@ -16,12 +14,7 @@ func InviteByEmail(from *models.User, to string) (*models.Invitation, error) {
 		return nil, err
 	}
 
-	payload, err := json.Marshal(invitation.Token)
-	if err != nil {
-		return invitation, err
-	}
-
-	err = jobs.Push("invitation.deliver", payload)
+	err = jobs.Push("invitation.deliver", invitation.Token)
 	if err != nil {
 		return nil, err
 	}

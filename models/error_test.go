@@ -10,17 +10,17 @@ func TestError_ShouldNotify(t *testing.T) {
 	group := &Error{}
 
 	ok := group.ShouldNotify()
-	assert.False(t, ok)
+	assert.True(t, ok)
 
-	group.WasInserted = false
-	ok = group.ShouldNotify()
-	assert.False(t, ok)
-
-	group.WasInserted = true
+	group.Occurrences = 0
 	ok = group.ShouldNotify()
 	assert.True(t, ok)
 
-	group.WasInserted = false
+	group.Occurrences = 1
+	ok = group.ShouldNotify()
+	assert.False(t, ok)
+
+	group.Occurrences = 1
 	group.Resolved = true
 	ok = group.ShouldNotify()
 	assert.True(t, ok)

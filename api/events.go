@@ -64,12 +64,7 @@ func EventsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error
 	}
 
 	if event.IsAsync() {
-		payload, err := json.Marshal(event.ID)
-		if err != nil {
-			return err
-		}
-
-		err = jobs.Push("event.process", payload)
+		err = jobs.Push("event.process", event.ID)
 		if err != nil {
 			return err
 		}

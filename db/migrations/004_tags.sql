@@ -75,3 +75,4 @@ create table error_key_values (
   primary key (project_id, key, value, error_id)
 );
 
+create index error_key_values_key_value_idx on error_key_values using btree(key, value);

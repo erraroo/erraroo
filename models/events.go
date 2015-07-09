@@ -1,7 +1,6 @@
 package models
 
 import (
-	"log"
 	"time"
 
 	"github.com/erraroo/erraroo/logger"
@@ -54,28 +53,22 @@ func (s *eventsStore) Create(token, kind, data string) (*Event, error) {
 }
 
 func (s *eventsStore) ListForProject(p *Project) ([]*Event, error) {
-	query := "select * from events where project_id = $1 order by created_at desc limit 100"
 	events := []*Event{}
-	err := s.Select(&events, query, p.ID)
-	return events, err
+	query := s.dbGorm.Where("project_id=?", p.ID).Order("created_at desc").Limit(100)
+	return events, query.Find(&events).Error
 }
 
 func (s *eventsStore) FindByID(id int64) (*Event, error) {
 	e := &Event{}
-	query := "select * from events where id = $1 limit 1"
-	return e, s.Get(e, query, id)
+	o := s.dbGorm.First(&e, id)
+	if o.RecordNotFound() {
+		return nil, ErrNotFound
+	}
+	return e, nil
 }
 
 func (s *eventsStore) Update(e *Event) error {
-	query := "update events set payload=$1 where id = $2"
-
-	_, err := s.Exec(query, e.Payload, e.ID)
-	if err != nil {
-		log.Printf("error updating error %v\n", err)
-		return err
-	}
-
-	return nil
+	return s.dbGorm.Save(e).Error
 }
 
 type EventQuery struct {
@@ -92,40 +85,34 @@ type EventResults struct {
 }
 
 func (s *eventsStore) FindQuery(q EventQuery) (EventResults, error) {
-	errs := EventResults{}
-	errs.Query = q
-	errs.Events = []*Event{}
+	events := EventResults{
+		Query:  q,
+		Events: []*Event{},
+	}
 
-	countQuery := builder.Select("count(*)").From("events")
-	findQuery := builder.Select("*").From("events")
-
-	countQuery = countQuery.Where("project_id=?", q.ProjectID)
-	findQuery = findQuery.Where("project_id=?", q.ProjectID)
+	scope := s.dbGorm.Table("events")
+	scope = scope.Where("events.project_id=?", q.ProjectID)
 
 	if q.Checksum != "" {
-		countQuery = countQuery.Where("checksum=?", q.Checksum)
-		findQuery = findQuery.Where("checksum=?", q.Checksum)
+		scope = scope.Where("events.checksum=?", q.Checksum)
 	}
 
 	if q.Kind != "" {
-		countQuery = countQuery.Where("kind=?", q.Kind)
-		findQuery = findQuery.Where("kind=?", q.Kind)
+		scope = scope.Where("events.kind=?", q.Kind)
 	}
 
-	findQuery = findQuery.Limit(uint64(q.PerPageOrDefault())).Offset(uint64(q.Offset()))
-	findQuery = findQuery.OrderBy("created_at desc")
-
-	query, args, _ := findQuery.ToSql()
-	err := s.Select(&errs.Events, query, args...)
-	if err != nil {
-		return errs, err
+	o := scope.Count(&events.Total)
+	if o.Error != nil {
+		return events, o.Error
 	}
 
-	query, args, _ = countQuery.ToSql()
-	err = s.Get(&errs.Total, query, args...)
-	if err != nil {
-		return errs, err
+	scope = scope.Limit(q.PerPageOrDefault()).Offset(q.Offset())
+	scope = scope.Order("events.created_at desc")
+
+	o = scope.Find(&events.Events)
+	if o.Error != nil {
+		return events, o.Error
 	}
 
-	return errs, err
+	return events, nil
 }

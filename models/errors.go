@@ -1,9 +1,7 @@
 package models
 
 import (
-	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/erraroo/erraroo/logger"
 )
@@ -34,50 +32,19 @@ type ErrorResults struct {
 type errorsStore struct{ *Store }
 
 func (s *errorsStore) FindOrCreate(p *Project, e *Event) (*Error, error) {
-	group, err := s.findByProjectIDAndChecksum(p.ID, e.Checksum)
-	if err == ErrNotFound {
-		group = newError(p, e)
-		return group, s.insert(group)
-	} else if err != nil {
-		return nil, err
+	er := &Error{}
+
+	out := s.dbGorm.FirstOrCreate(&er, Error{
+		Checksum:  e.Checksum,
+		ProjectID: p.ID,
+	})
+
+	if out.Error != nil {
+		logger.Error(out.Error.Error())
+		return nil, out.Error
 	}
 
-	return group, nil
-}
-
-func (s *errorsStore) findByProjectIDAndChecksum(id int64, checksum string) (*Error, error) {
-	group := &Error{}
-	query := "select * from errors where project_id=$1 and checksum=$2 limit 1"
-	err := s.Get(group, query, id, checksum)
-	if err == sql.ErrNoRows {
-		return nil, ErrNotFound
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return group, nil
-}
-
-func (s *errorsStore) insert(group *Error) error {
-	query := "insert into errors (name, message, checksum, project_id, occurrences, last_seen_at) values($1,$2,$3,$4,$5,$6) returning id"
-	err := s.QueryRow(query,
-		group.Name,
-		group.Message,
-		group.Checksum,
-		group.ProjectID,
-		group.Occurrences,
-		group.LastSeenAt,
-	).Scan(&group.ID)
-
-	if err != nil {
-		logger.Error("error inserting group", "err", err)
-		return err
-	}
-
-	group.WasInserted = true
-	return nil
+	return er, nil
 }
 
 func (s *errorsStore) Touch(g *Error) error {
@@ -90,95 +57,56 @@ func (s *errorsStore) Touch(g *Error) error {
 	)
 }
 
-func (s *errorsStore) Update(group *Error) error {
-	group.UpdatedAt = time.Now().UTC()
-
-	query := "update errors set occurrences=$1, last_seen_at=$2, resolved=$3, updated_at=$4, muted=$5 where id=$6"
-	_, err := s.Exec(query,
-		group.Occurrences,
-		group.LastSeenAt,
-		group.Resolved,
-		group.UpdatedAt,
-		group.Muted,
-		group.ID,
-	)
-
-	return err
+func (s *errorsStore) Update(e *Error) error {
+	return s.dbGorm.Save(e).Error
 }
 
 func (s *errorsStore) FindQuery(q ErrorQuery) (ErrorResults, error) {
-	errors := ErrorResults{}
-	errors.Query = q
-	errors.Errors = []*Error{}
-
-	countQuery := builder.Select("count(*)").From("errors")
-	findQuery := builder.Select("errors.*").From("errors")
-
-	countQuery = countQuery.Where("errors.project_id=?", q.ProjectID)
-	findQuery = findQuery.Where("errors.project_id=?", q.ProjectID)
-
-	if q.Status == "unresolved" {
-		countQuery = countQuery.Where("errors.resolved=? AND errors.muted=?", false, false)
-		findQuery = findQuery.Where("errors.resolved=? AND errors.muted=?", false, false)
+	errors := ErrorResults{
+		Query:  q,
+		Errors: []*Error{},
 	}
 
-	if q.Status == "resolved" {
-		countQuery = countQuery.Where("errors.resolved=? AND errors.muted=?", true, false)
-		findQuery = findQuery.Where("errors.resolved=? AND errors.muted=?", true, false)
+	scope := s.dbGorm.Table("errors")
+	scope = scope.Where("errors.project_id=?", q.ProjectID)
+
+	switch q.Status {
+	case "unresolved":
+		scope = scope.Where("errors.resolved=? and errors.muted=?", false, false)
+	case "resolved":
+		scope = scope.Where("errors.resolved=? and errors.muted=?", true, false)
+	case "muted":
+		scope = scope.Where("errors.muted=?", true)
 	}
 
-	if q.Status == "muted" {
-		countQuery = countQuery.Where("errors.muted=?", true)
-		findQuery = findQuery.Where("errors.muted=?", true)
+	o := scope.Count(&errors.Total)
+	if o.Error != nil {
+		return errors, o.Error
 	}
 
-	if len(q.Tags) > 0 {
-		findQuery = findQuery.Join("error_tag_values on error_tag_values.error_id = errors.id")
-		countQuery = countQuery.Join("error_tag_values on error_tag_values.error_id = errors.id")
+	scope = scope.Limit(q.PerPageOrDefault()).Offset(q.Offset())
+	scope.Order("errors.last_seen_at desc")
 
-		for _, tag := range q.Tags {
-			findQuery = findQuery.Where("error_tag_values.key=? and error_tag_values.value=?", tag.Key, tag.Value)
-			countQuery = countQuery.Where("error_tag_values.key=? and error_tag_values.value=?", tag.Key, tag.Value)
-		}
+	o = scope.Find(&errors.Errors)
+	if o.Error != nil {
+		return errors, o.Error
 	}
 
-	findQuery = findQuery.Limit(uint64(q.PerPageOrDefault())).Offset(uint64(q.Offset()))
-	findQuery = findQuery.OrderBy("errors.last_seen_at desc")
-
-	query, args, _ := findQuery.ToSql()
-	err := s.Select(&errors.Errors, query, args...)
-	if err != nil {
-		return errors, err
-	}
-
-	query, args, _ = countQuery.ToSql()
-	err = s.Get(&errors.Total, query, args...)
-	if err != nil {
-		return errors, err
-	}
-
-	return errors, err
+	return errors, nil
 }
 
 func (s *errorsStore) FindByID(id int64) (*Error, error) {
-	group := &Error{}
-	query := "select * from errors where id=$1 limit 1"
-	err := s.Get(group, query, id)
-	if err == sql.ErrNoRows {
+	e := &Error{}
+	o := s.dbGorm.First(&e, id)
+	if o.RecordNotFound() {
 		return nil, ErrNotFound
 	}
 
-	if err != nil {
-		return nil, err
+	if o.Error != nil {
+		return nil, o.Error
 	}
 
-	query = "select * from error_tag_values where error_id = $1"
-	err = s.Select(&group.Tags, query, id)
-	if err != nil {
-		return nil, err
-	}
-
-	return group, nil
+	return e, nil
 }
 
 func (s *errorsStore) AddTags(e *Error, tags []Tag) error {

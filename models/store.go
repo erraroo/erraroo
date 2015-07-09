@@ -11,6 +11,7 @@ import (
 
 	"github.com/erraroo/erraroo/config"
 	"github.com/erraroo/erraroo/logger"
+	"github.com/jinzhu/gorm"
 	"github.com/jmoiron/sqlx"
 	"github.com/lann/squirrel"
 	_ "github.com/lib/pq"
@@ -36,7 +37,9 @@ var (
 // Store is the abstraction used to interact with the
 // database.
 type Store struct {
-	*sqlx.DB
+	//*sqlx.DB
+	gorm.DB
+	dbGorm gorm.DB
 }
 
 // NewStore initializes a new Store
@@ -49,7 +52,15 @@ func NewStore(config string) (*Store, error) {
 
 	db.SetMaxOpenConns(10)
 
-	return &Store{db}, nil
+	dbGorm, err := gorm.Open("postgres", config)
+	if err != nil {
+		logger.Error("could not connect to postgres", "err", err)
+		return nil, err
+	}
+
+	dbGorm.DB().SetMaxOpenConns(10)
+
+	return &Store{dbGorm, dbGorm}, nil
 }
 
 // Close closes all the connections
@@ -69,7 +80,7 @@ func (s *Store) Migrate() {
 		path = filepath.Join(pkg.Dir, "db", "migrations")
 	}
 
-	err := dbmigrate.Run(s.DB.DB, path)
+	err := dbmigrate.Run(s.dbGorm.DB(), path)
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
@@ -90,29 +101,29 @@ func (s *Store) logQuery(start time.Time, query string, args ...interface{}) {
 func (s *Store) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	start := time.Now()
 	defer s.logQuery(start, query, args...)
-	return s.DB.Query(query, args...)
+	return s.dbGorm.DB().Query(query, args...)
 }
 
 func (s *Store) QueryRow(query string, args ...interface{}) *sql.Row {
 	start := time.Now()
 	defer s.logQuery(start, query, args...)
-	return s.DB.QueryRow(query, args...)
+	return s.dbGorm.DB().QueryRow(query, args...)
 }
 
 func (s *Store) Exec(query string, args ...interface{}) (sql.Result, error) {
 	start := time.Now()
 	defer s.logQuery(start, query, args...)
-	return s.DB.Exec(query, args...)
+	return s.dbGorm.DB().Exec(query, args...)
 }
 
-func (s *Store) Select(dest interface{}, query string, args ...interface{}) error {
-	start := time.Now()
-	defer s.logQuery(start, query, args...)
-	return s.DB.Select(dest, query, args...)
-}
+//func (s *Store) Select(dest interface{}, query string, args ...interface{}) error {
+//start := time.Now()
+//defer s.logQuery(start, query, args...)
+//return s.DB.Select(dest, query, args...)
+//}
 
-func (s *Store) Get(dest interface{}, query string, args ...interface{}) error {
-	start := time.Now()
-	defer s.logQuery(start, query, args...)
-	return s.DB.Get(dest, query, args...)
-}
+//func (s *Store) Get(dest interface{}, query string, args ...interface{}) error {
+//start := time.Now()
+//defer s.logQuery(start, query, args...)
+//return s.DB.Get(dest, query, args...)
+//}

@@ -18,14 +18,8 @@ type invitationsStore struct{ *Store }
 
 func (s *invitationsStore) ListForUser(user *User) ([]*Invitation, error) {
 	invitations := []*Invitation{}
-
-	query := "select * from invitations where account_id = $1 order by created_at desc, updated_at desc"
-	err := s.Select(&invitations, query, user.AccountID)
-	if err != nil {
-		logger.Error("selecting from invitations", "err", err)
-	}
-
-	return invitations, err
+	return invitations, s.Where("account_id=?", user.AccountID).
+		Order("created_at desc").Find(&invitations).Error
 }
 
 func (s *invitationsStore) Create(to string, user *User) (*Invitation, error) {
@@ -62,19 +56,28 @@ func (s *invitationsStore) Create(to string, user *User) (*Invitation, error) {
 
 func (s *invitationsStore) FindByToken(token string) (*Invitation, error) {
 	invitation := &Invitation{}
-	query := "select * from invitations where token = $1 limit 1"
-	err := s.Get(invitation, query, token)
-	if err != nil {
-		logger.Error("finding invitation by token", "token", token, "err", err)
+
+	o := s.dbGorm.Where("token=?", token).First(&invitation)
+	if o.RecordNotFound() {
+		return nil, ErrNotFound
 	}
 
-	return invitation, err
+	if o.Error != nil {
+		logger.Error("finding invitation by token", "token", token, "err", o.Error)
+	}
+
+	return invitation, nil
 }
 
 func (s *invitationsStore) Update(i *Invitation) error {
-	i.UpdatedAt = time.Now().UTC()
-	query := "update invitations set accepted=$1, updated_at=$2 where token = $3"
+	if err := s.dbGorm.Save(i).Error; err != nil {
+		logger.Error("updating invitation", "token", i.Token, "err", err)
+		return err
+	}
 
+	return nil
+
+	query := "update invitations set accepted=$1, updated_at=$2 where token = $3"
 	_, err := s.Exec(query, i.Accepted, i.UpdatedAt, i.Token)
 	if err != nil {
 		logger.Error("updating invitation", "token", i.Token, "err", err)

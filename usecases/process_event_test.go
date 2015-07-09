@@ -26,7 +26,7 @@ func TestProcessEvent_DeliversNotifcations(t *testing.T) {
 
 	err := ProcessEvent(e.ID)
 	assert.Nil(t, err)
-	assert.Equal(t, len(emailSender.sends), 1)
+	assert.Equal(t, 1, len(emailSender.sends))
 
 	send := emailSender.sends[0]
 	assert.Equal(t, send["to"], user.Email)

@@ -1,7 +1,6 @@
 package models
 
 import (
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -13,10 +12,10 @@ type Project struct {
 	ID              int64
 	Name            string
 	Token           string
-	AccountID       int64     `db:"account_id"`
-	CreatedAt       time.Time `db:"created_at"`
-	UpdatedAt       time.Time `db:"updated_at"`
-	UnresolvedCount int       `db:"unresolved_count"`
+	AccountID       int64
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	UnresolvedCount int `sql:"-"`
 }
 
 func (p *Project) Channel() string {
@@ -54,16 +53,13 @@ func (s *projectsStore) Create(name string, accountID int64) (*Project, error) {
 		return nil, err
 	}
 
-	project := &Project{}
-	project.Name = name
-	project.Token = token
-	project.AccountID = accountID
-	project.CreatedAt = time.Now().UTC()
-	project.UpdatedAt = project.CreatedAt
+	project := &Project{
+		Name:      name,
+		Token:     token,
+		AccountID: accountID,
+	}
 
-	query := "insert into projects (name, token, account_id, created_at, updated_at) values ($1,$2,$3,$4,$5) returning id"
-	row := s.QueryRow(query, project.Name, project.Token, project.AccountID, project.CreatedAt, project.UpdatedAt)
-	return project, row.Scan(&project.ID)
+	return project, s.dbGorm.Save(project).Error
 }
 
 func (s *projectsStore) GenerateToken() (string, error) {
@@ -89,43 +85,34 @@ func (s *projectsStore) GenerateToken() (string, error) {
 func (s *projectsStore) FindByToken(token string) (*Project, error) {
 	project := &Project{}
 
-	err := s.Get(project, "select * from projects where token = $1 limit 1", token)
-	if err == sql.ErrNoRows {
+	o := s.dbGorm.Where("token=?", token).First(&project)
+	if o.RecordNotFound() {
 		return nil, ErrNotFound
 	}
 
-	return project, err
+	return project, o.Error
 }
 
 const unresolvedCount = "(select count(*) from errors where errors.project_id = projects.id and errors.resolved = 'f' and errors.muted = 'f') as unresolved_count"
 
 func (s *projectsStore) FindByID(id int64) (*Project, error) {
 	project := &Project{}
-
-	query := "select *, " + unresolvedCount + " from projects where projects.id = $1"
-	err := s.Get(project, query, id)
-	if err == sql.ErrNoRows {
+	sel := []string{"projects.*", unresolvedCount}
+	out := s.dbGorm.Where("projects.id=?", id).Select(sel).Find(&project)
+	if out.RecordNotFound() {
 		return nil, ErrNotFound
 	}
 
-	return project, err
+	return project, out.Error
 }
 
 func (s *projectsStore) ByAccountID(id int64) ([]*Project, error) {
 	projects := []*Project{}
-	query := "select *, " + unresolvedCount + " from projects where projects.account_id = $1"
-	return projects, s.Select(&projects, query, id)
+	sel := []string{"projects.*", unresolvedCount}
+	out := s.dbGorm.Where("projects.account_id=?", id).Select(sel).Find(&projects)
+	return projects, out.Error
 }
 
 func (s *projectsStore) Update(project *Project) error {
-	project.UpdatedAt = time.Now().UTC()
-	query := "update projects set name=$1, token=$2, updated_at=$3 where id=$4"
-	_, err := s.Exec(query,
-		project.Name,
-		project.Token,
-		project.UpdatedAt,
-		project.ID,
-	)
-
-	return err
+	return s.dbGorm.Save(project).Error
 }

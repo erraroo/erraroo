@@ -1,9 +1,6 @@
 package models
 
-import (
-	"database/sql"
-	"errors"
-)
+import "errors"
 
 // UsersStore is the abstraction that needs to be implemented to
 // access user data
@@ -26,56 +23,53 @@ var ErrNotFound = errors.New("not found")
 func (s usersStore) FindByID(id int64) (*User, error) {
 	u := &User{}
 
-	row := s.QueryRow("select id, email, account_id from users where id = $1 limit 1", id)
-	err := row.Scan(&u.ID, &u.Email, &u.AccountID)
-
-	if err == sql.ErrNoRows {
-		return u, ErrNotFound
+	o := s.dbGorm.First(&u, id)
+	if o.RecordNotFound() {
+		return nil, ErrNotFound
 	}
 
-	return u, err
+	if o.Error != nil {
+		return nil, o.Error
+	}
+
+	return u, nil
 }
 
 func (s *usersStore) Insert(user *User) error {
-	row := s.QueryRow("insert into users (email, encrypted_password, account_id) values($1,$2,$3) returning id",
-		user.Email, user.EncryptedPassword, user.AccountID)
-	return row.Scan(&user.ID)
+	return s.dbGorm.Save(user).Error
 }
 
 func (s *usersStore) Exists(email string) bool {
-	exists := false
-	row := s.QueryRow("select exists(select 1 from users where lower(email) = lower($1))", email)
-	row.Scan(&exists)
-	return exists
+	_, err := s.FindByEmail(email)
+	return ErrNotFound != err
 }
 
 func (s usersStore) FindByEmail(email string) (*User, error) {
 	u := &User{}
 
-	row := s.QueryRow("select id, email, encrypted_password, account_id from users where lower(email) = lower($1) limit 1", email)
-	err := row.Scan(&u.ID, &u.Email, &u.EncryptedPassword, &u.AccountID)
-
-	if err == sql.ErrNoRows {
-		return u, ErrNotFound
+	o := s.dbGorm.Where("lower(email) = lower(?)", email).First(&u)
+	if o.RecordNotFound() {
+		return nil, ErrNotFound
 	}
 
-	return u, err
+	if o.Error != nil {
+		return nil, o.Error
+	}
+
+	return u, nil
 }
 
 func (s usersStore) Create(email, password string, account *Account) (*User, error) {
 	user := NewUser(email, password)
 	user.AccountID = account.ID
-	return user, s.Insert(user)
+	return user, s.dbGorm.Save(user).Error
 }
 
 func (s usersStore) ByAccountID(id int64) ([]*User, error) {
 	users := []*User{}
-	query := "select * from users where account_id=$1"
-	return users, s.Select(&users, query, id)
+	return users, s.dbGorm.Where("account_id=?", id).Find(&users).Error
 }
 
 func (s usersStore) Update(user *User) error {
-	query := "update users set encrypted_password=$1 where id = $2"
-	_, err := s.Exec(query, user.EncryptedPassword, user.ID)
-	return err
+	return s.dbGorm.Save(user).Error
 }

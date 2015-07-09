@@ -47,12 +47,17 @@ func (s *passwordRecoversStore) Create(user *User) (*PasswordRecover, error) {
 }
 
 func (s *passwordRecoversStore) FindByToken(token string) (*PasswordRecover, error) {
+	var err error
 	pr := &PasswordRecover{}
-	query := "select * from password_recovers where token = $1 limit 1"
-	err := s.Get(pr, query, token)
-	if err != nil {
-		logger.Error("finding password_recover by token", "token", token, "err", err)
-		return nil, err
+
+	o := s.Where("token=?", token).First(&pr)
+	if o.RecordNotFound() {
+		return nil, ErrNotFound
+	}
+
+	if o.Error != nil {
+		logger.Error("finding password_recover by token", "token", token, "err", o.Error)
+		return nil, o.Error
 	}
 
 	pr.User, err = Users.FindByID(pr.UserID)

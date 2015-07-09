@@ -1,6 +1,11 @@
 package jobs
 
-import "github.com/nerdyworm/rsq"
+import (
+	"encoding/json"
+
+	"github.com/erraroo/erraroo/logger"
+	"github.com/nerdyworm/rsq"
+)
 
 var queue rsq.Queue
 
@@ -12,8 +17,14 @@ func Work(handler rsq.JobHandler) {
 	queue.Work(handler)
 }
 
-func Push(name string, payload []byte) error {
-	return queue.Push(name, payload)
+func Push(name string, payload interface{}) error {
+	p, err := json.Marshal(payload)
+	if err != nil {
+		logger.Error("could not marshal payload", "err", err)
+		return err
+	}
+
+	return queue.Push(name, p)
 }
 
 func Shutdown() error {

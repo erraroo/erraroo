@@ -1,6 +1,9 @@
 package logger
 
 import (
+	"fmt"
+	"runtime"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/erraroo/erraroo/config"
 )
@@ -25,10 +28,14 @@ func Info(msg string, args ...interface{}) {
 }
 
 func Error(msg string, args ...interface{}) {
+	args = append(args, "backtrace")
+	args = append(args, backtrace())
 	logger.WithFields(makeFields(args...)).Error(msg)
 }
 
 func Fatal(msg string, args ...interface{}) {
+	args = append(args, "backtrace")
+	args = append(args, backtrace())
 	logger.WithFields(makeFields(args...)).Fatal(msg)
 }
 
@@ -42,4 +49,21 @@ func makeFields(args ...interface{}) logrus.Fields {
 	}
 
 	return fields
+}
+
+func backtrace() (body string) {
+	for skip := 2; ; skip++ {
+		pc, file, line, ok := runtime.Caller(skip)
+		if !ok {
+			break
+		}
+
+		if file[len(file)-1] == 'c' {
+			continue
+		}
+
+		body += fmt.Sprintf("%s:%d %s()\n", file, line, runtime.FuncForPC(pc).Name())
+	}
+
+	return body
 }
