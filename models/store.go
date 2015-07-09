@@ -37,15 +37,15 @@ type Store struct {
 }
 
 // NewStore initializes a new Store
-func NewStore(config string) (*Store, error) {
-	dbGorm, err := gorm.Open("postgres", config)
+func NewStore(c string) (*Store, error) {
+	dbGorm, err := gorm.Open("postgres", c)
 	if err != nil {
 		logger.Error("could not connect to postgres", "err", err)
 		return nil, err
 	}
 
 	dbGorm.DB().SetMaxOpenConns(10)
-	dbGorm.LogMode(true)
+	dbGorm.LogMode(config.LogSql)
 
 	return &Store{dbGorm}, nil
 }

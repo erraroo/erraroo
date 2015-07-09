@@ -4,6 +4,7 @@ import "github.com/spf13/viper"
 
 var (
 	Env                  string
+	LogSql               bool
 	MigrationsPath       string
 	Port                 int
 	Postgres             string
@@ -31,6 +32,7 @@ func init() {
 	viper.ReadInConfig()
 
 	Env = viper.GetString("Env")
+	LogSql = viper.GetBool("LogSql")
 
 	// jwt
 	TokenSigningKey = []byte(viper.GetString("TokenSigningKey"))
