@@ -21,7 +21,9 @@ func TestProcessEventCreatesError(t *testing.T) {
 
 func TestProcessEvent_DeliversNotifcations(t *testing.T) {
 	emailSender.Clear()
+
 	_, user, project := aup(t)
+	emailOnError(user)
 	e := makeEvent(t, project, "{}")
 
 	err := ProcessEvent(e.ID)
@@ -39,7 +41,8 @@ func TestProcessEvent_DeliversNotifcations(t *testing.T) {
 func TestProcessEvent_DeliversNotifcationsWhenResolved(t *testing.T) {
 	emailSender.Clear()
 
-	_, _, project := aup(t)
+	_, user, project := aup(t)
+	emailOnError(user)
 	e := makeEvent(t, project, "{}")
 
 	err := ProcessEvent(e.ID)
@@ -85,4 +88,10 @@ func TestProcessEvent_DoesNotDeliverNotifcationsToUsersThatDoNotWantThem(t *test
 
 	err = ProcessEvent(e.ID)
 	assert.Equal(t, 0, len(emailSender.sends))
+}
+
+func emailOnError(u *models.User) {
+	prefs, _ := models.Prefs.Get(u)
+	prefs.EmailOnError = true
+	models.Prefs.Update(prefs)
 }
