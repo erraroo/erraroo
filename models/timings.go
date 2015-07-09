@@ -36,5 +36,8 @@ func (s *timingsStore) Update(t *Timing) error {
 
 func (s *timingsStore) Last7Days(project *Project) ([]*Timing, error) {
 	timings := []*Timing{}
-	return timings, s.Where("project_id = ? and created_at > now_utc()::date - interval '7d'", project.ID).Find(&timings).Error
+	scope := s.Where("project_id=?", project.ID)
+	scope = scope.Where("created_at > now_utc()::date - interval '7d'")
+	scope = scope.Order("created_at desc")
+	return timings, scope.Find(&timings).Error
 }

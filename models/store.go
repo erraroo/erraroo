@@ -45,6 +45,7 @@ func NewStore(config string) (*Store, error) {
 	}
 
 	dbGorm.DB().SetMaxOpenConns(10)
+	dbGorm.LogMode(true)
 
 	return &Store{dbGorm}, nil
 }
