@@ -88,6 +88,20 @@ func ProjectsUpdate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) err
 	return JSON(w, http.StatusOK, serializers.NewShowProject(project))
 }
 
+func ProjectLibaries(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
+	project, err := getAuthorizedProject(r, ctx)
+	if err != nil {
+		return err
+	}
+
+	libaries, err := models.Libaries.ListForProject(project)
+	if err != nil {
+		return nil
+	}
+
+	return JSON(w, http.StatusOK, serializers.NewLibraries(libaries))
+}
+
 func getAuthorizedProject(r *http.Request, ctx *cx.Context) (*models.Project, error) {
 	id, err := GetID(r)
 	if err != nil {

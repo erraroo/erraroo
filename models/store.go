@@ -22,6 +22,7 @@ var (
 	Events           EventsStore
 	Errors           ErrorsStore
 	Invitations      InvitationsStore
+	Libaries         LibariesStore
 	PasswordRecovers PasswordRecoversStore
 	Plans            PlansStore
 	Prefs            PrefsStore

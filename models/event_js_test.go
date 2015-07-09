@@ -9,22 +9,10 @@ import (
 func TestEventJSExtractsTags(t *testing.T) {
 	event := &Event{
 		Kind:    "js.error",
-		Payload: `{"libaries":[{"name":"roo","version":"1.0.0"}]}`,
-	}
-
-	tags := event.Tags()
-	assert.NotEmpty(t, tags)
-
-	tag := tags[0]
-	assert.Equal(t, "js.library.roo", tag.Key)
-	assert.Equal(t, "1.0.0", tag.Value)
-
-	event = &Event{
-		Kind:    "js.error",
 		Payload: `{"useragent":"iterm","url":"http://example.com"}`,
 	}
 
-	tags = event.Tags()
+	tags := event.Tags()
 	assert.NotEmpty(t, tags)
 	assert.Equal(t, "js.useragent", tags[0].Key)
 	assert.Equal(t, "iterm", tags[0].Value)

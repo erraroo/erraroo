@@ -1,8 +1,6 @@
 package api
 
 import (
-	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/erraroo/erraroo/api/bus"
@@ -40,39 +38,14 @@ func ErrorsIndex(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error 
 	}
 
 	query := models.ErrorQuery{}
+	query.QueryOptions = QueryOptions(r)
 	query.PerPage = 50
 	query.ProjectID = project.ID
 	query.Status = r.URL.Query().Get("status")
-	query.QueryOptions.Page = Page(r)
-	query.Tags = []models.Tag{}
 
-	for i := 0; i < 10; i++ {
-		keyKey := fmt.Sprintf("tags[%d][key]", i)
-		valKey := fmt.Sprintf("tags[%d][value]", i)
-
-		key := r.URL.Query().Get(keyKey)
-		val := r.URL.Query().Get(valKey)
-
-		if key != "" && val != "" {
-			query.Tags = append(query.Tags, models.Tag{
-				Key:   key,
-				Value: val,
-			})
-		}
+	if id, err := StrToID(r.URL.Query().Get("library")); err == nil {
+		query.Libaries = []int64{id}
 	}
-
-	log.Println(r.URL.Query().Get("tags[0][key]"))
-	log.Println(r.URL.Query().Get("tags[0][key]"))
-	log.Println(r.URL.Query().Get("tags[0][key]"))
-	log.Println(r.URL.Query().Get("tags[0][key]"))
-	log.Println(r.URL.Query().Get("tags[0][key]"))
-
-	//q.Tags = []Tag{
-	//Tag{
-	//Key:   "js.library.Ember Data",
-	//Value: "2.0.0+canary.5ac74d1117",
-	//},
-	//}
 
 	groups, err := models.Errors.FindQuery(query)
 	if err != nil {

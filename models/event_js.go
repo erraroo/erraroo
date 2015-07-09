@@ -10,27 +10,19 @@ import (
 )
 
 type jsEvent struct {
-	Language  string    `json:"language"`
-	Libaries  []library `json:"libaries"`
-	Plugins   []plugin  `json:"plugins"`
-	Trace     trace     `json:"trace"`
-	URL       string    `json:"url"`
-	UserAgent string    `json:"userAgent"`
-	Version   string    `json:"version"`
-	Processed bool      `json:"processed"`
+	Language  string           `json:"language"`
+	Libaries  []jsEventLibrary `json:"libaries"`
+	Plugins   []plugin         `json:"plugins"`
+	Trace     trace            `json:"trace"`
+	URL       string           `json:"url"`
+	UserAgent string           `json:"userAgent"`
+	Version   string           `json:"version"`
+	Processed bool             `json:"processed"`
 }
 
-type library struct {
+type jsEventLibrary struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`
-}
-
-func (l library) Tag() Tag {
-	return Tag{
-		Key:   "js.library." + l.Name,
-		Value: l.Version,
-		Label: "Library",
-	}
 }
 
 type plugin struct {
@@ -138,9 +130,9 @@ func (e *jsErrorEvent) Tags() []Tag {
 
 	tags := []Tag{}
 
-	for _, l := range js.Libaries {
-		tags = append(tags, l.Tag())
-	}
+	//for _, l := range js.Libaries {
+	//tags = append(tags, l.Tag())
+	//}
 
 	if js.UserAgent != "" {
 		tags = append(tags, Tag{
@@ -159,6 +151,18 @@ func (e *jsErrorEvent) Tags() []Tag {
 	}
 
 	return tags
+}
+
+func (e *jsErrorEvent) Libaries() []Library {
+	js, _ := e.unmarshal()
+
+	libs := []Library{}
+
+	for _, l := range js.Libaries {
+		libs = append(libs, Library{ProjectID: e.ProjectID, Name: l.Name, Version: l.Version})
+	}
+
+	return libs
 }
 
 func populateFrameContext(f *frame, resources *resourcesStore) error {
@@ -202,6 +206,10 @@ func (e *jsTimingEvent) Tags() []Tag {
 	return []Tag{}
 }
 
+func (e *jsTimingEvent) Libaries() []Library {
+	return []Library{}
+}
+
 type jsLogEvent struct{ *Event }
 
 func (e *jsLogEvent) IsAsync() bool {
@@ -231,4 +239,8 @@ func (e *jsLogEvent) Message() string {
 
 func (e *jsLogEvent) Tags() []Tag {
 	return []Tag{}
+}
+
+func (e *jsLogEvent) Libaries() []Library {
+	return []Library{}
 }

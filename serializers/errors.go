@@ -43,7 +43,7 @@ func NewUpdateError(p *models.Project, e *models.Error) UpdateError {
 	return UpdateError{
 		Error: NewError(e),
 		Projects: []Project{
-			Project{p},
+			NewProject(p),
 		},
 	}
 }

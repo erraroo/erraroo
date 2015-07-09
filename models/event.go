@@ -37,6 +37,10 @@ func (e *Event) Tags() []Tag {
 	return e.handler().Tags()
 }
 
+func (e *Event) Libaries() []Library {
+	return e.handler().Libaries()
+}
+
 func (e *Event) handler() EventHandler {
 	switch e.Kind {
 	case "js.error":
@@ -58,4 +62,5 @@ type EventHandler interface {
 	PreProcess() error
 	PostProcess() error
 	Tags() []Tag
+	Libaries() []Library
 }

@@ -59,6 +59,12 @@ func afterJsErrorProcessed(event *models.Event) error {
 		return err
 	}
 
+	err = models.Libaries.Add(e, event.Libaries())
+	if err != nil {
+		logger.Error("adding libraries", "err", err)
+		return err
+	}
+
 	if !e.Muted {
 		bus.Push(p.Channel(), bus.Notifcation{
 			Name:    "errors.update",

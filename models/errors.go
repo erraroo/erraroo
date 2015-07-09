@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/erraroo/erraroo/logger"
 )
@@ -20,6 +21,7 @@ type ErrorQuery struct {
 	ProjectID int64
 	Status    string
 	Tags      []Tag
+	Libaries  []int64
 	QueryOptions
 }
 
@@ -32,16 +34,16 @@ type ErrorResults struct {
 type errorsStore struct{ *Store }
 
 func (s *errorsStore) FindOrCreate(p *Project, e *Event) (*Error, error) {
-	er := &Error{}
+	er := newError(p, e)
 
-	out := s.FirstOrCreate(&er, Error{
-		Checksum:  e.Checksum,
-		ProjectID: p.ID,
+	scope := s.Where(Error{
+		Checksum:  er.Checksum,
+		ProjectID: er.ProjectID,
 	})
 
-	if out.Error != nil {
-		logger.Error(out.Error.Error())
-		return nil, out.Error
+	if err := scope.Attrs(er).FirstOrCreate(&er).Error; err != nil {
+		logger.Error("finding or creating error", "err", err)
+		return nil, err
 	}
 
 	return er, nil
@@ -67,7 +69,7 @@ func (s *errorsStore) FindQuery(q ErrorQuery) (ErrorResults, error) {
 		Errors: []*Error{},
 	}
 
-	scope := s.Table("errors")
+	scope := s.Table("errors").Debug()
 	scope = scope.Where("errors.project_id=?", q.ProjectID)
 
 	switch q.Status {
@@ -78,6 +80,19 @@ func (s *errorsStore) FindQuery(q ErrorQuery) (ErrorResults, error) {
 	case "muted":
 		scope = scope.Where("errors.muted=?", true)
 	}
+
+	joins := []string{}
+	for i, lib := range q.Libaries {
+		name := fmt.Sprintf("el_%d", i)
+
+		join := fmt.Sprintf("inner join error_libraries %s on (%s.error_id=errors.id)", name, name)
+		joins = append(joins, join)
+
+		where := fmt.Sprintf("%s.library_id=?", name)
+		scope = scope.Where(where, lib)
+	}
+
+	scope = scope.Joins(strings.Join(joins, " "))
 
 	o := scope.Count(&errors.Total)
 	if o.Error != nil {

@@ -15,7 +15,7 @@ type Project struct {
 	AccountID       int64
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
-	UnresolvedCount int `sql:"-"`
+	UnresolvedCount int
 }
 
 func (p *Project) Channel() string {
@@ -59,7 +59,7 @@ func (s *projectsStore) Create(name string, accountID int64) (*Project, error) {
 		AccountID: accountID,
 	}
 
-	return project, s.Save(project).Error
+	return project, s.Omit("unresolved_count").Save(project).Error
 }
 
 func (s *projectsStore) GenerateToken() (string, error) {
@@ -114,5 +114,5 @@ func (s *projectsStore) ByAccountID(id int64) ([]*Project, error) {
 }
 
 func (s *projectsStore) Update(project *Project) error {
-	return s.Save(project).Error
+	return s.Omit("unresolved_count").Save(project).Error
 }
