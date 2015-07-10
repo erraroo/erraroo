@@ -1,7 +1,6 @@
 package serializers
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/erraroo/erraroo/models"
@@ -9,7 +8,6 @@ import (
 
 type Event struct {
 	*models.Event
-	PayloadUrl string
 }
 
 type ShowEvent struct {
@@ -31,8 +29,7 @@ type Events struct {
 
 func NewEvent(e *models.Event) Event {
 	event := Event{
-		Event:      e,
-		PayloadUrl: fmt.Sprintf("/api/v1/events/%d/payload", e.ID),
+		Event: e,
 	}
 
 	return event

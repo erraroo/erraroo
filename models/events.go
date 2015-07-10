@@ -1,14 +1,6 @@
 package models
 
-import (
-	"fmt"
-	"time"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/erraroo/erraroo/jobs"
-	"github.com/erraroo/erraroo/logger"
-)
+import "github.com/erraroo/erraroo/jobs"
 
 // EventsStore is the interface to error data
 type EventsStore interface {
@@ -17,6 +9,7 @@ type EventsStore interface {
 	FindByID(int64) (*Event, error)
 	FindQuery(EventQuery) (EventResults, error)
 	Update(*Event) error
+	Insert(*Event) error
 }
 
 type eventsStore struct{ *Store }
@@ -28,91 +21,26 @@ func (s *eventsStore) Create(token, kind, data string) (*Event, error) {
 		return nil, err
 	}
 
-	e := &Event{}
-	e.Kind = kind
-	e.Payload = data
-	e.ProjectID = project.ID
-	e.CreatedAt = time.Now().UTC()
-	e.UpdatedAt = e.CreatedAt
-
-	err = e.PreProcess()
-	if err != nil {
-		logger.Error("error pre processing event", "kind", kind, "payload", data, "token", token, "err", err)
-		return nil, err
-	}
-
 	switch kind {
 	case "js.error":
-		e.Payload = "{}"
-		err := s.Save(e).Error
-		if err != nil {
-			logger.Error("inserting event", "err", err)
-			return nil, err
-		}
+		err = jobs.Push("create.js.error", map[string]string{
+			"token": token,
+			"data":  data,
+		})
 
-		key := fmt.Sprintf("%d", e.ID)
-		err = put(key, []byte(data))
-		if err != nil {
-			return nil, err
-		}
-
-		err = jobs.Push("event.process", e.ID)
 		if err != nil {
 			return nil, err
 		}
 
 	case "js.timing":
-		_, err := Timings.Create(project, e.Payload)
+		_, err := Timings.Create(project, data)
 		if err != nil {
 			return nil, err
 		}
 
 	}
 
-	return e, err
-}
-
-var tableName = "fun"
-var svc = dynamodb.New(nil)
-
-func put(key string, payload []byte) error {
-	params := &dynamodb.PutItemInput{
-		Item: map[string]*dynamodb.AttributeValue{
-			"id": {
-				N: aws.String(key),
-			},
-			"payload": {
-				B: payload,
-			},
-		},
-		TableName: aws.String(tableName),
-	}
-
-	_, err := svc.PutItem(params)
-	return err
-}
-
-func get(key string) ([]byte, error) {
-	params := &dynamodb.GetItemInput{
-		Key: map[string]*dynamodb.AttributeValue{
-			"id": {
-				N: aws.String(key),
-			},
-		},
-		TableName: aws.String(tableName),
-	}
-
-	resp, err := svc.GetItem(params)
-	if err != nil {
-		return nil, err
-	}
-
-	item := resp.Item["payload"]
-	return item.B, nil
-}
-
-func GetPayload(key string) ([]byte, error) {
-	return get(key)
+	return nil, err
 }
 
 func (s *eventsStore) ListForProject(p *Project) ([]*Event, error) {
@@ -132,6 +60,20 @@ func (s *eventsStore) FindByID(id int64) (*Event, error) {
 
 func (s *eventsStore) Update(e *Event) error {
 	err := s.Save(e).Error
+	if err != nil {
+		return err
+	}
+
+	return err
+}
+
+func (s *eventsStore) Insert(e *Event) error {
+	err := e.PreProcess()
+	if err != nil {
+		return err
+	}
+
+	err = s.Save(e).Error
 	if err != nil {
 		return err
 	}

@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -117,36 +116,4 @@ func EventsIndex(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error 
 	}
 
 	return JSON(w, http.StatusOK, serializers.NewEvents(events))
-}
-
-func EventPayloadShow(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
-	id, err := GetID(r)
-	if err != nil {
-		return err
-	}
-
-	e, err := models.Events.FindByID(id)
-	if err != nil {
-		return err
-	}
-
-	project, err := models.Projects.FindByID(e.ProjectID)
-	if err != nil {
-		return err
-	}
-
-	if !ctx.User.CanSee(project) {
-		return models.ErrNotFound
-	}
-
-	payload, err := models.GetPayload(fmt.Sprintf("%d", e.ID))
-	if err != nil {
-		return err
-	}
-
-	asdf := map[string]interface{}{}
-
-	json.Unmarshal(payload, &asdf)
-
-	return JSON(w, http.StatusOK, asdf)
 }

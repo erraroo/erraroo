@@ -69,7 +69,6 @@ func (a *App) setupMux() {
 	a.Router.Handle("/api/v1/projects/{id}", a.AuthroziedHandler(api.ProjectsUpdate)).Methods("PUT")
 	a.Router.Handle("/api/v1/projects/{id}/libraries", a.AuthroziedHandler(api.ProjectLibaries)).Methods("GET")
 	a.Router.Handle("/api/v1/events/{id}", a.AuthroziedHandler(api.EventsShow)).Methods("GET")
-	a.Router.Handle("/api/v1/events/{id}/payload", a.AuthroziedHandler(api.EventPayloadShow)).Methods("GET")
 	a.Router.Handle("/api/v1/events", a.AuthroziedHandler(api.EventsIndex)).Methods("GET")
 	a.Router.Handle("/api/v1/errors", a.AuthroziedHandler(api.ErrorsIndex)).Methods("GET")
 	a.Router.Handle("/api/v1/errors/{id}", a.AuthroziedHandler(api.ErrorsShow)).Methods("GET")
@@ -110,6 +109,30 @@ func (a *App) setupQueue() {
 
 		return usecases.InvitationDeliver(token)
 	}))
+
+	a.JobRouter.Handle("create.js.error", a.JobHandler(func(job *rsq.Job, c *cx.Context) error {
+		payload := map[string]string{}
+		err := json.Unmarshal(job.Payload, &payload)
+		if err != nil {
+			return err
+		}
+
+		token := payload["token"]
+		project, err := models.Projects.FindByToken(token)
+		if err != nil {
+			return err
+		}
+
+		e := models.NewEvent(project, "js.error", payload["data"])
+		err = models.Events.Insert(e)
+		if err != nil {
+			logger.Error("inserting event", "err", err)
+			return err
+		}
+
+		return usecases.ProcessEvent(e.ID)
+	}))
+
 }
 
 func (a *App) newContext(r *http.Request) (*cx.Context, error) {
