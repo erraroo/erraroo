@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 
 	"github.com/erraroo/erraroo/logger"
 )
@@ -87,7 +88,13 @@ func (e *jsErrorEvent) PostProcess() error {
 		return err
 	}
 
-	e.Payload = string(payload)
+	key := fmt.Sprintf("%d", e.ID)
+	err = put(key, payload)
+	if err != nil {
+		return err
+	}
+
+	//e.Payload = string(payload)
 	err = Events.Update(e.Event)
 	if err != nil {
 		logger.Error("updating event", "err", err, "event", e.ID)
@@ -110,8 +117,17 @@ func (e *jsErrorEvent) Checksum() string {
 
 func (e *jsErrorEvent) unmarshal() (jsEvent, error) {
 	var js jsEvent
-	err := json.Unmarshal([]byte(e.Payload), &js)
-	return js, err
+
+	payload, err := get(fmt.Sprintf("%d", e.ID))
+	log.Println("FETCH")
+	if err != nil {
+		return js, err
+	}
+
+	return js, json.Unmarshal(payload, &js)
+
+	//err := json.Unmarshal([]byte(e.Payload), &js)
+	//return js, err
 }
 
 func (e *jsErrorEvent) Name() string {

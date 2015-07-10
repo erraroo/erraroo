@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -42,14 +43,18 @@ func (s *eventsStore) Create(token, kind, data string) (*Event, error) {
 
 	switch kind {
 	case "js.error":
+		e.Payload = "{}"
 		err := s.Save(e).Error
 		if err != nil {
 			logger.Error("inserting event", "err", err)
 			return nil, err
 		}
 
-		//key := fmt.Sprintf("%d", e.ID)
-		//err = put(key, []byte(e.Payload))
+		key := fmt.Sprintf("%d", e.ID)
+		err = put(key, []byte(data))
+		if err != nil {
+			return nil, err
+		}
 
 		err = jobs.Push("event.process", e.ID)
 		if err != nil {
@@ -104,6 +109,10 @@ func get(key string) ([]byte, error) {
 
 	item := resp.Item["payload"]
 	return item.B, nil
+}
+
+func GetPayload(key string) ([]byte, error) {
+	return get(key)
 }
 
 func (s *eventsStore) ListForProject(p *Project) ([]*Event, error) {
