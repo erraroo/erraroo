@@ -21,20 +21,12 @@ func (e *Event) Name() string {
 	return e.handler().Name()
 }
 
-func (e *Event) IsAsync() bool {
-	return e.handler().IsAsync()
-}
-
 func (e *Event) PreProcess() error {
 	return e.handler().PreProcess()
 }
 
 func (e *Event) PostProcess() error {
 	return e.handler().PostProcess()
-}
-
-func (e *Event) Tags() []Tag {
-	return e.handler().Tags()
 }
 
 func (e *Event) Libaries() []Library {
@@ -56,11 +48,9 @@ func (e *Event) handler() EventHandler {
 
 type EventHandler interface {
 	Checksum() string
-	IsAsync() bool
 	Message() string
 	Name() string
 	PreProcess() error
 	PostProcess() error
-	Tags() []Tag
 	Libaries() []Library
 }

@@ -21,13 +21,13 @@ func ProcessEvent(eventID int64) error {
 	}
 
 	if event.Kind == "js.error" {
-		return afterJsErrorProcessed(event)
+		return afterErrorEventProcessed(event)
 	}
 
 	return nil
 }
 
-func afterJsErrorProcessed(event *models.Event) error {
+func afterErrorEventProcessed(event *models.Event) error {
 	p, err := models.Projects.FindByID(event.ProjectID)
 	if err != nil {
 		return err
@@ -36,6 +36,12 @@ func afterJsErrorProcessed(event *models.Event) error {
 	e, err := models.Errors.FindOrCreate(p, event)
 	if err != nil {
 		logger.Error("finding or creating error e", "err", err)
+		return err
+	}
+
+	err = models.Libaries.Add(e, event.Libaries())
+	if err != nil {
+		logger.Error("adding Libaries", "err", err, "project", p.ID, "error.ID", e.ID)
 		return err
 	}
 
@@ -50,18 +56,6 @@ func afterJsErrorProcessed(event *models.Event) error {
 	err = models.Errors.Touch(e)
 	if err != nil {
 		logger.Error("touching e", "err", err, "e", e.ID)
-		return err
-	}
-
-	err = models.Errors.AddTags(e, event.Tags())
-	if err != nil {
-		logger.Error("adding tags", "err", err, "e", e.ID)
-		return err
-	}
-
-	err = models.Libaries.Add(e, event.Libaries())
-	if err != nil {
-		logger.Error("adding libraries", "err", err)
 		return err
 	}
 
@@ -91,11 +85,10 @@ func notifyUsersOfNewError(project *models.Project, group *models.Error) error {
 		if pref.EmailOnError {
 			err = mailers.DeliverNewErrorNotification(user, group)
 			if err != nil {
-				logger.Error("deliver new group notifcation", "err", err, "user", user.ID, "email", user.Email)
+				logger.Error("deliver new error notifcation", "err", err, "user", user.ID, "email", user.Email)
 				continue
 			}
 		}
-
 	}
 
 	return nil

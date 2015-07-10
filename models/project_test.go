@@ -1,24 +1,10 @@
 package models
 
 import (
-	"os"
 	"testing"
 
-	"github.com/erraroo/erraroo/config"
 	"github.com/stretchr/testify/assert"
 )
-
-func TestMain(m *testing.M) {
-	config.Env = "test"
-	config.Postgres = "dbname=erraroo_test sslmode=disable"
-	Setup(config.Postgres)
-
-	SetupForTesting()
-	defer Shutdown()
-
-	ret := m.Run()
-	os.Exit(ret)
-}
 
 func TestProjectsByAccountID(t *testing.T) {
 	account1, err := Accounts.Create()
@@ -46,5 +32,4 @@ func TestProjectsByAccountID(t *testing.T) {
 	assert.Equal(t, project2.ID, projects[0].ID)
 	assert.Equal(t, project2.Name, projects[0].Name)
 	assert.Equal(t, project2.AccountID, projects[0].AccountID)
-
 }

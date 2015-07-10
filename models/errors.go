@@ -31,6 +31,7 @@ type ErrorResults struct {
 	Total  int64
 	Query  ErrorQuery
 }
+
 type errorsStore struct{ *Store }
 
 func (s *errorsStore) FindOrCreate(p *Project, e *Event) (*Error, error) {

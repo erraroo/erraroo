@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/erraroo/erraroo/cx"
-	"github.com/erraroo/erraroo/jobs"
 	"github.com/erraroo/erraroo/logger"
 	"github.com/erraroo/erraroo/models"
 	"github.com/erraroo/erraroo/serializers"
@@ -53,7 +52,7 @@ func EventsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error
 	}
 	data := string(payload)
 
-	event, err := models.Events.Create(token, request.Kind, data)
+	_, err = models.Events.Create(token, request.Kind, data)
 	if err == models.ErrNotFound {
 		w.WriteHeader(http.StatusBadRequest)
 		return nil
@@ -61,13 +60,6 @@ func EventsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error
 
 	if err != nil {
 		return err
-	}
-
-	if event.IsAsync() {
-		err = jobs.Push("event.process", event.ID)
-		if err != nil {
-			return err
-		}
 	}
 
 	w.WriteHeader(http.StatusCreated)

@@ -88,7 +88,6 @@ func (e *jsErrorEvent) PostProcess() error {
 	}
 
 	e.Payload = string(payload)
-
 	err = Events.Update(e.Event)
 	if err != nil {
 		logger.Error("updating event", "err", err, "event", e.ID)
@@ -182,8 +181,7 @@ func (e *jsTimingEvent) IsAsync() bool {
 }
 
 func (e *jsTimingEvent) PreProcess() error {
-	_, err := Timings.Create(&Project{ID: e.ProjectID}, e.Payload)
-	return err
+	return nil
 }
 
 func (e *jsTimingEvent) PostProcess() error {

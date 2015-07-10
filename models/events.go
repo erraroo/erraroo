@@ -3,6 +3,9 @@ package models
 import (
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/erraroo/erraroo/jobs"
 	"github.com/erraroo/erraroo/logger"
 )
 
@@ -37,19 +40,70 @@ func (s *eventsStore) Create(token, kind, data string) (*Event, error) {
 		return nil, err
 	}
 
-	query := "insert into events (payload, project_id, checksum, kind, created_at, updated_at) values ($1,$2,$3,$4,$5,$6) returning id"
-	row := s.QueryRow(query,
-		e.Payload,
-		e.ProjectID,
-		e.Checksum,
-		e.Kind,
-		e.CreatedAt,
-		e.UpdatedAt,
-	)
+	switch kind {
+	case "js.error":
+		err := s.Save(e).Error
+		if err != nil {
+			logger.Error("inserting event", "err", err)
+			return nil, err
+		}
 
-	err = row.Scan(&e.ID)
+		//key := fmt.Sprintf("%d", e.ID)
+		//err = put(key, []byte(e.Payload))
+
+		err = jobs.Push("event.process", e.ID)
+		if err != nil {
+			return nil, err
+		}
+
+	case "js.timing":
+		_, err := Timings.Create(project, e.Payload)
+		if err != nil {
+			return nil, err
+		}
+
+	}
 
 	return e, err
+}
+
+var tableName = "fun"
+var svc = dynamodb.New(nil)
+
+func put(key string, payload []byte) error {
+	params := &dynamodb.PutItemInput{
+		Item: map[string]*dynamodb.AttributeValue{
+			"id": {
+				N: aws.String(key),
+			},
+			"payload": {
+				B: payload,
+			},
+		},
+		TableName: aws.String(tableName),
+	}
+
+	_, err := svc.PutItem(params)
+	return err
+}
+
+func get(key string) ([]byte, error) {
+	params := &dynamodb.GetItemInput{
+		Key: map[string]*dynamodb.AttributeValue{
+			"id": {
+				N: aws.String(key),
+			},
+		},
+		TableName: aws.String(tableName),
+	}
+
+	resp, err := svc.GetItem(params)
+	if err != nil {
+		return nil, err
+	}
+
+	item := resp.Item["payload"]
+	return item.B, nil
 }
 
 func (s *eventsStore) ListForProject(p *Project) ([]*Event, error) {
@@ -68,7 +122,12 @@ func (s *eventsStore) FindByID(id int64) (*Event, error) {
 }
 
 func (s *eventsStore) Update(e *Event) error {
-	return s.Save(e).Error
+	err := s.Save(e).Error
+	if err != nil {
+		return err
+	}
+
+	return err
 }
 
 type EventQuery struct {

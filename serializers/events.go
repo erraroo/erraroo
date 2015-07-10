@@ -14,9 +14,9 @@ type ShowEvent struct {
 	Event Event
 }
 
-func NewShowEvent(p *models.Event) ShowEvent {
+func NewShowEvent(e *models.Event) ShowEvent {
 	return ShowEvent{
-		Event: Event{p},
+		Event: NewEvent(e),
 	}
 }
 
@@ -27,12 +27,20 @@ type Events struct {
 	}
 }
 
+func NewEvent(e *models.Event) Event {
+	event := Event{
+		Event: e,
+	}
+
+	return event
+}
+
 func NewEvents(results models.EventResults) Events {
 	e := Events{}
 	e.Events = make([]Event, len(results.Events))
 
-	for i, p := range results.Events {
-		e.Events[i] = Event{p}
+	for i, event := range results.Events {
+		e.Events[i] = NewEvent(event)
 	}
 
 	pages := math.Ceil(float64(results.Total) / float64(results.Query.PerPageOrDefault()))

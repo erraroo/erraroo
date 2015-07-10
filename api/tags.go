@@ -27,6 +27,7 @@ func ErrorTagsIndex(w http.ResponseWriter, r *http.Request, ctx *cx.Context) err
 		return models.ErrNotFound
 	}
 
+	e.Tags = []models.TagValue{}
 	return JSON(w, http.StatusOK, struct {
 		Tags []models.TagValue
 	}{Tags: e.Tags})

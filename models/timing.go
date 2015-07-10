@@ -5,6 +5,8 @@ import (
 	"log"
 	"math"
 	"time"
+
+	"github.com/erraroo/erraroo/logger"
 )
 
 type Timing struct {
@@ -27,7 +29,7 @@ func (t *Timing) Average(payload string) error {
 	oldData := timingData{}
 	err = json.Unmarshal([]byte(t.Payload), &oldData)
 	if err != nil {
-		log.Println(err)
+		logger.Error("Unmarshal", "err", err)
 		return err
 	}
 
@@ -45,7 +47,7 @@ func (t *Timing) Average(payload string) error {
 
 	newPayload, err := json.Marshal(newData)
 	if err != nil {
-		log.Println(err)
+		logger.Error("Marshal", "err", err)
 		return err
 	}
 
@@ -55,13 +57,23 @@ func (t *Timing) Average(payload string) error {
 
 func (t *Timing) PreProcess() {
 	data := timingData{}
-	json.Unmarshal([]byte(t.Payload), &data)
+
+	err := json.Unmarshal([]byte(t.Payload), &data)
+	if err != nil {
+		logger.Error("could not unmarshal timing payload", "err", err)
+		return
+	}
 
 	for key := range data {
 		data[key] = toFixed(data[key], 0)
 	}
 
-	payload, _ := json.Marshal(data)
+	payload, err := json.Marshal(data)
+	if err != nil {
+		logger.Error("could not marshal timing payload", "err", err, "data", data)
+		return
+	}
+
 	t.Payload = string(payload)
 }
 
