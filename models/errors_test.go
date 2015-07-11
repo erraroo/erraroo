@@ -13,7 +13,8 @@ func TestErrors(t *testing.T) {
 	project, err := Projects.Create("Test Project", account.ID)
 	assert.Nil(t, err)
 
-	e, err := Events.Create(project.Token, "js.error", "{}")
+	e := NewEvent(project, "js.error", "{}")
+	err = Events.Insert(e)
 	assert.Nil(t, err)
 
 	group, err := Errors.FindOrCreate(project, e)
@@ -69,10 +70,12 @@ func TestErrors_TouchCountsNumberOfOccurrences(t *testing.T) {
 	project, err := Projects.Create("Test Project", account.ID)
 	assert.Nil(t, err)
 
-	event, err := Events.Create(project.Token, "js.error", "{}")
+	event := NewEvent(project, "js.error", "{}")
+	err = Events.Insert(event)
 	assert.Nil(t, err)
 
-	event, err = Events.Create(project.Token, "js.error", "{}")
+	event = NewEvent(project, "js.error", "{}")
+	err = Events.Insert(event)
 	assert.Nil(t, err)
 
 	e, err := Errors.FindOrCreate(project, event)

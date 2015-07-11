@@ -2,7 +2,7 @@ package models
 
 import "github.com/erraroo/erraroo/jobs"
 
-// EventsStore is the interface to error data
+// EventsStore is the interface to event data
 type EventsStore interface {
 	Create(token, kind, data string) (*Event, error)
 	ListForProject(*Project) ([]*Event, error)

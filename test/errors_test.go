@@ -31,6 +31,7 @@ func TestCreateEvent(t *testing.T) {
 	req, res := rr("POST", "/api/v1/events", request)
 	req.Header.Set("X-Token", project.Token)
 	_app.ServeHTTP(res, req)
+	jobs.Work(_app)
 
 	assert.Equal(t, http.StatusCreated, res.Code)
 
@@ -54,9 +55,11 @@ func TestCreateEvent(t *testing.T) {
 
 func TestEventShow(t *testing.T) {
 	project, _ := models.Projects.Create("test project", _account.ID)
-	e, _ := models.Events.Create(project.Token, "js.error", "{}")
+	event := models.NewEvent(project, "js.error", "{}")
+	err := models.Events.Insert(event)
+	assert.Nil(t, err)
 
-	req, res := rr("GET", fmt.Sprintf("/api/v1/events/%d", e.ID), nil)
+	req, res := rr("GET", fmt.Sprintf("/api/v1/events/%d", event.ID), nil)
 	req.Header.Add("Authorization", _token)
 
 	_app.ServeHTTP(res, req)
@@ -64,26 +67,34 @@ func TestEventShow(t *testing.T) {
 
 	response := serializers.ShowEvent{}
 	json.NewDecoder(res.Body).Decode(&response)
-	assert.Equal(t, e.ID, response.Event.ID)
-	assert.Equal(t, e.Payload, response.Event.Payload)
-	assert.Equal(t, e.Checksum, response.Event.Checksum)
+	assert.Equal(t, event.ID, response.Event.ID)
+	assert.Equal(t, event.Payload, response.Event.Payload)
+	assert.Equal(t, event.Checksum, response.Event.Checksum)
 }
 
 func TestEventShowOnlyShowsEventsOwnedByUser(t *testing.T) {
 	account2, _ := models.Accounts.Create()
 	project, _ := models.Projects.Create("test project", account2.ID)
-	e, _ := models.Events.Create(project.Token, "js.error", "{}")
+	event := models.NewEvent(project, "js.error", "{}")
+	err := models.Events.Insert(event)
+	assert.Nil(t, err)
 
-	req, res := rr("GET", fmt.Sprintf("/api/v1/events/%d", e.ID), nil)
+	req, res := rr("GET", fmt.Sprintf("/api/v1/events/%d", event.ID), nil)
 	req.Header.Add("Authorization", _token)
 	_app.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusNotFound, res.Code)
 }
 
 func TestEventsByProjectId(t *testing.T) {
-	project, _ := models.Projects.Create("test project", _account.ID)
-	e, _ := models.Events.Create(project.Token, "js.error", "{}")
-	group, _ := models.Errors.FindOrCreate(project, e)
+	project, err := models.Projects.Create("test project", _account.ID)
+	assert.Nil(t, err)
+
+	e := models.NewEvent(project, "js.error", "{}")
+	err = models.Events.Insert(e)
+	assert.Nil(t, err)
+
+	group, err := models.Errors.FindOrCreate(project, e)
+	assert.Nil(t, err)
 
 	req, res := rr("GET", fmt.Sprintf("/api/v1/events?project_id=%d&group_id=%d", project.ID, group.ID), nil)
 	req.Header.Add("Authorization", _token)

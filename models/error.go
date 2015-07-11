@@ -25,10 +25,11 @@ type ErrorQueryResults struct {
 
 func newError(p *Project, e *Event) *Error {
 	return &Error{
-		Checksum:   e.Checksum,
-		Name:       e.Name(),
-		Message:    e.Message(),
-		ProjectID:  p.ID,
+		Checksum:  e.Checksum,
+		Name:      e.Name(),
+		Message:   e.Message(),
+		ProjectID: p.ID,
+		//Occurrences: 1,
 		LastSeenAt: time.Now().UTC(),
 		CreatedAt:  time.Now().UTC(),
 	}

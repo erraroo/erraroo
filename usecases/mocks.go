@@ -61,8 +61,9 @@ func user(t *testing.T, account *models.Account) *models.User {
 }
 
 func makeEvent(t *testing.T, project *models.Project, payload string) *models.Event {
-	e, err := models.Events.Create(project.Token, "js.error", payload)
+	event := models.NewEvent(project, "js.error", payload)
+	err := models.Events.Insert(event)
 	assert.Nil(t, err)
-	assert.NotNil(t, e)
-	return e
+	assert.NotNil(t, event)
+	return event
 }

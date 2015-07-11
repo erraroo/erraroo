@@ -47,6 +47,18 @@ func (s *errorsStore) FindOrCreate(p *Project, e *Event) (*Error, error) {
 		return nil, err
 	}
 
+	err := Libaries.Add(er, e.Libaries())
+	if err != nil {
+		logger.Error("adding Libaries", "err", err, "project", p.ID, "error.ID", er.ID)
+		return nil, err
+	}
+
+	//err = Errors.Touch(er)
+	//if err != nil {
+	//logger.Error("touching e", "err", err, "e", e.ID)
+	//return nil, err
+	//}
+
 	return er, nil
 }
 

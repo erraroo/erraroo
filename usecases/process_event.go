@@ -39,12 +39,6 @@ func afterErrorEventProcessed(event *models.Event) error {
 		return err
 	}
 
-	err = models.Libaries.Add(e, event.Libaries())
-	if err != nil {
-		logger.Error("adding Libaries", "err", err, "project", p.ID, "error.ID", e.ID)
-		return err
-	}
-
 	if e.ShouldNotify() {
 		err = notifyUsersOfNewError(p, e)
 		if err != nil {
