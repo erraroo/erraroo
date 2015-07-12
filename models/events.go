@@ -1,10 +1,7 @@
 package models
 
-import "github.com/erraroo/erraroo/jobs"
-
 // EventsStore is the interface to event data
 type EventsStore interface {
-	Create(token, kind, data string) (*Event, error)
 	ListForProject(*Project) ([]*Event, error)
 	FindByID(int64) (*Event, error)
 	FindQuery(EventQuery) (EventResults, error)
@@ -12,36 +9,20 @@ type EventsStore interface {
 	Insert(*Event) error
 }
 
-type eventsStore struct{ *Store }
-
-func (s *eventsStore) Create(token, kind, data string) (*Event, error) {
-	var err error
-	project, err := Projects.FindByToken(token)
-	if err != nil {
-		return nil, err
-	}
-
-	switch kind {
-	case "js.error":
-		err = jobs.Push("create.js.error", map[string]string{
-			"token": token,
-			"data":  data,
-		})
-
-		if err != nil {
-			return nil, err
-		}
-
-	case "js.timing":
-		_, err := Timings.Create(project, data)
-		if err != nil {
-			return nil, err
-		}
-
-	}
-
-	return nil, err
+type EventQuery struct {
+	ProjectID int64
+	Checksum  string
+	Kind      string
+	QueryOptions
 }
+
+type EventResults struct {
+	Events []*Event
+	Total  int64
+	Query  EventQuery
+}
+
+type eventsStore struct{ *Store }
 
 func (s *eventsStore) ListForProject(p *Project) ([]*Event, error) {
 	events := []*Event{}
@@ -59,7 +40,7 @@ func (s *eventsStore) FindByID(id int64) (*Event, error) {
 }
 
 func (s *eventsStore) Update(e *Event) error {
-	err := s.Save(e).Error
+	err := s.Debug().Save(e).Error
 	if err != nil {
 		return err
 	}
@@ -68,30 +49,12 @@ func (s *eventsStore) Update(e *Event) error {
 }
 
 func (s *eventsStore) Insert(e *Event) error {
-	err := e.PreProcess()
-	if err != nil {
-		return err
-	}
-
-	err = s.Save(e).Error
+	err := s.Debug().Save(e).Error
 	if err != nil {
 		return err
 	}
 
 	return err
-}
-
-type EventQuery struct {
-	ProjectID int64
-	Checksum  string
-	Kind      string
-	QueryOptions
-}
-
-type EventResults struct {
-	Events []*Event
-	Total  int64
-	Query  EventQuery
 }
 
 func (s *eventsStore) FindQuery(q EventQuery) (EventResults, error) {

@@ -111,26 +111,32 @@ func (a *App) setupQueue() {
 	}))
 
 	a.JobRouter.Handle("create.js.error", a.JobHandler(func(job *rsq.Job, c *cx.Context) error {
-		payload := map[string]string{}
+		payload := map[string]interface{}{}
 		err := json.Unmarshal(job.Payload, &payload)
 		if err != nil {
 			return err
 		}
 
-		token := payload["token"]
-		project, err := models.Projects.FindByToken(token)
+		id := int64(payload["projectID"].(float64))
+		project, err := models.Projects.FindByID(id)
 		if err != nil {
 			return err
 		}
 
-		e := models.NewEvent(project, "js.error", payload["data"])
+		raw, err := json.Marshal(payload["data"])
+		if err != nil {
+			logger.Error("marshalling payload", "payload", payload)
+			return err
+		}
+
+		e := models.NewEvent(project, "js.error", string(raw))
 		err = models.Events.Insert(e)
 		if err != nil {
 			logger.Error("inserting event", "err", err)
 			return err
 		}
 
-		return usecases.ProcessEvent(e.ID)
+		return usecases.AfterErrorEventCreated(e)
 	}))
 
 }

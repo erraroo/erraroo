@@ -5,19 +5,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-
-	"github.com/erraroo/erraroo/logger"
 )
 
 type jsEvent struct {
-	Language  string           `json:"language"`
-	Libaries  []jsEventLibrary `json:"libaries"`
-	Plugins   []plugin         `json:"plugins"`
-	Trace     trace            `json:"trace"`
-	URL       string           `json:"url"`
-	UserAgent string           `json:"userAgent"`
-	Version   string           `json:"version"`
-	Processed bool             `json:"processed"`
+	Language  string                 `json:"language"`
+	Libaries  []jsEventLibrary       `json:"libaries"`
+	Plugins   []plugin               `json:"plugins"`
+	Trace     trace                  `json:"trace"`
+	URL       string                 `json:"url"`
+	UserAgent string                 `json:"userAgent"`
+	Version   string                 `json:"version"`
+	Processed bool                   `json:"processed"`
+	Logs      []jsLog                `json:"logs"`
+	Userdata  map[string]interface{} `json:"userdata"`
+}
+
+type jsLog struct {
+	Level     string  `json:"level"`
+	Timestamp float64 `json:"timestamp"`
+	Message   string  `json:"message"`
 }
 
 type jsEventLibrary struct {
@@ -57,16 +63,9 @@ type SourceContext struct {
 
 type jsErrorEvent struct{ *Event }
 
-func (e *jsErrorEvent) IsAsync() bool {
-	return true
-}
-
-func (e *jsErrorEvent) PreProcess() error {
+func (e *jsErrorEvent) PreCreate() error {
 	e.Event.Checksum = e.Checksum()
-	return nil
-}
 
-func (e *jsErrorEvent) PostProcess() error {
 	resources := NewResourceStore()
 
 	jse, err := e.unmarshal()
@@ -88,12 +87,6 @@ func (e *jsErrorEvent) PostProcess() error {
 	}
 
 	e.Payload = string(payload)
-	err = Events.Update(e.Event)
-	if err != nil {
-		logger.Error("updating event", "err", err, "event", e.ID)
-		return err
-	}
-
 	return nil
 }
 
@@ -129,13 +122,9 @@ func (e *jsErrorEvent) Tags() []Tag {
 
 	tags := []Tag{}
 
-	//for _, l := range js.Libaries {
-	//tags = append(tags, l.Tag())
-	//}
-
 	if js.UserAgent != "" {
 		tags = append(tags, Tag{
-			Key:   "js.useragent",
+			Key:   "useragent",
 			Value: js.UserAgent,
 			Label: "UserAgent",
 		})
@@ -143,7 +132,7 @@ func (e *jsErrorEvent) Tags() []Tag {
 
 	if js.URL != "" {
 		tags = append(tags, Tag{
-			Key:   "js.url",
+			Key:   "url",
 			Value: js.URL,
 			Label: "URL",
 		})
@@ -172,73 +161,4 @@ func populateFrameContext(f *frame, resources *resourcesStore) error {
 
 	f.SourceContext = resource.Context(f.Line, f.Column)
 	return nil
-}
-
-type jsTimingEvent struct{ *Event }
-
-func (e *jsTimingEvent) IsAsync() bool {
-	return false
-}
-
-func (e *jsTimingEvent) PreProcess() error {
-	return nil
-}
-
-func (e *jsTimingEvent) PostProcess() error {
-	return nil
-}
-
-func (e *jsTimingEvent) Checksum() string {
-	return ""
-}
-
-func (e *jsTimingEvent) Name() string {
-	return "timing event"
-}
-
-func (e *jsTimingEvent) Message() string {
-	return "timing event recorded"
-}
-
-func (e *jsTimingEvent) Tags() []Tag {
-	return []Tag{}
-}
-
-func (e *jsTimingEvent) Libaries() []Library {
-	return []Library{}
-}
-
-type jsLogEvent struct{ *Event }
-
-func (e *jsLogEvent) IsAsync() bool {
-	return false
-}
-
-func (e *jsLogEvent) PreProcess() error {
-	logger.Info("js.log", "payload", e.Payload)
-	return nil
-}
-
-func (e *jsLogEvent) PostProcess() error {
-	return nil
-}
-
-func (e *jsLogEvent) Checksum() string {
-	return ""
-}
-
-func (e *jsLogEvent) Name() string {
-	return "log event"
-}
-
-func (e *jsLogEvent) Message() string {
-	return "log event"
-}
-
-func (e *jsLogEvent) Tags() []Tag {
-	return []Tag{}
-}
-
-func (e *jsLogEvent) Libaries() []Library {
-	return []Library{}
 }

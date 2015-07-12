@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
@@ -9,16 +8,12 @@ import (
 	"github.com/erraroo/erraroo/cx"
 	"github.com/erraroo/erraroo/logger"
 	"github.com/erraroo/erraroo/models"
+	"github.com/erraroo/erraroo/models/events"
 	"github.com/erraroo/erraroo/serializers"
 	"github.com/erraroo/erraroo/usecases"
 )
 
 const rateLimitDuration = 60 * time.Second
-
-type CreateEventRequest struct {
-	Kind string                 `json:"kind"`
-	Data map[string]interface{} `json:"data"`
-}
 
 func EventsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	token := r.Header.Get("X-Token")
@@ -43,16 +38,10 @@ func EventsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error
 		return usecases.RateExceeded(token)
 	}
 
-	request := CreateEventRequest{}
+	request := events.CreateEventRequest{}
 	Decode(r, &request)
 
-	payload, err := json.Marshal(request.Data)
-	if err != nil {
-		return err
-	}
-	data := string(payload)
-
-	_, err = models.Events.Create(token, request.Kind, data)
+	err = events.Ingest(token, request)
 	if err == models.ErrNotFound {
 		w.WriteHeader(http.StatusBadRequest)
 		return nil

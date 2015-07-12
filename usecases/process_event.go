@@ -14,20 +14,14 @@ func ProcessEvent(eventID int64) error {
 		return err
 	}
 
-	err = event.PostProcess()
-	if err != nil {
-		logger.Error("event.PostProcess", "err", err, "event.ID", event.ID)
-		return err
-	}
-
 	if event.Kind == "js.error" {
-		return afterErrorEventProcessed(event)
+		return AfterErrorEventCreated(event)
 	}
 
 	return nil
 }
 
-func afterErrorEventProcessed(event *models.Event) error {
+func AfterErrorEventCreated(event *models.Event) error {
 	p, err := models.Projects.FindByID(event.ProjectID)
 	if err != nil {
 		return err
