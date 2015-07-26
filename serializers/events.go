@@ -8,6 +8,7 @@ import (
 
 type Event struct {
 	*models.Event
+	PayloadUrl string
 }
 
 type ShowEvent struct {
@@ -29,7 +30,8 @@ type Events struct {
 
 func NewEvent(e *models.Event) Event {
 	event := Event{
-		Event: e,
+		Event:      e,
+		PayloadUrl: e.SignedPayloadURL(),
 	}
 
 	return event

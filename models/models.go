@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/erraroo/erraroo/emailer"
 	_ "github.com/lib/pq"
 )
@@ -14,7 +15,7 @@ func Setup(config string) error {
 	}
 
 	Accounts = &accountsStore{store}
-	Events = &eventsStore{store}
+	Events = &eventsStore{store, s3.New(nil)}
 	Errors = &errorsStore{store}
 	Libaries = &libariesStore{store}
 	Invitations = &invitationsStore{store}

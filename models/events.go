@@ -1,12 +1,25 @@
 package models
 
+import (
+	"bytes"
+	"compress/gzip"
+	"io"
+	"strings"
+	"time"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/erraroo/erraroo/config"
+	"github.com/erraroo/erraroo/logger"
+)
+
 // EventsStore is the interface to event data
 type EventsStore interface {
 	ListForProject(*Project) ([]*Event, error)
 	FindByID(int64) (*Event, error)
 	FindQuery(EventQuery) (EventResults, error)
-	Update(*Event) error
 	Insert(*Event) error
+	PayloadURL(*Event) string
 }
 
 type EventQuery struct {
@@ -22,7 +35,10 @@ type EventResults struct {
 	Query  EventQuery
 }
 
-type eventsStore struct{ *Store }
+type eventsStore struct {
+	*Store
+	service *s3.S3
+}
 
 func (s *eventsStore) ListForProject(p *Project) ([]*Event, error) {
 	events := []*Event{}
@@ -39,22 +55,21 @@ func (s *eventsStore) FindByID(id int64) (*Event, error) {
 	return e, nil
 }
 
-func (s *eventsStore) Update(e *Event) error {
-	err := s.Debug().Save(e).Error
-	if err != nil {
-		return err
-	}
-
-	return err
-}
-
 func (s *eventsStore) Insert(e *Event) error {
-	err := s.Debug().Save(e).Error
+	err := e.BeforeCreate()
 	if err != nil {
+		logger.Error("error running before create on event", "err", err)
 		return err
 	}
 
-	return err
+	query := "insert into events (checksum, kind, project_id) values($1,$2,$3) returning id, created_at, updated_at"
+	err = s.QueryRow(query, e.Checksum, e.Kind, e.ProjectID).Scan(
+		&e.ID,
+		&e.CreatedAt,
+		&e.UpdatedAt,
+	)
+
+	return s.putPayload(e)
 }
 
 func (s *eventsStore) FindQuery(q EventQuery) (EventResults, error) {
@@ -88,4 +103,41 @@ func (s *eventsStore) FindQuery(q EventQuery) (EventResults, error) {
 	}
 
 	return events, nil
+}
+
+func (s *eventsStore) putPayload(e *Event) error {
+	var b bytes.Buffer
+	w := gzip.NewWriter(&b)
+	io.Copy(w, strings.NewReader(e.Payload))
+	w.Close()
+
+	params := &s3.PutObjectInput{
+		Bucket:          aws.String(config.Bucket),
+		Body:            bytes.NewReader(b.Bytes()),
+		ContentEncoding: aws.String("gzip"),
+		ContentType:     aws.String("application/json"),
+		Key:             aws.String(e.PayloadKey()),
+	}
+
+	_, err := s.service.PutObject(params)
+	if err != nil {
+		logger.Error("error saving payload to s3", "err", err)
+		return err
+	}
+
+	return err
+}
+
+func (s *eventsStore) PayloadURL(e *Event) string {
+	req, _ := s.service.GetObjectRequest(&s3.GetObjectInput{
+		Bucket: aws.String(config.Bucket),
+		Key:    aws.String(e.PayloadKey()),
+	})
+
+	url, err := req.Presign(300 * time.Second)
+	if err != nil {
+		panic(err)
+	}
+
+	return url
 }

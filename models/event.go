@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // Event is the entity that stores error data
 type Event struct {
@@ -44,6 +47,15 @@ func (e *Event) Handler() EventHandler {
 	}
 
 	return nil
+}
+
+func (e *Event) PayloadKey() string {
+	t := e.CreatedAt.Format("2006/01/02")
+	return fmt.Sprintf("projects/%d/events/%s/%d/payload.json", e.ProjectID, t, e.ID)
+}
+
+func (e *Event) SignedPayloadURL() string {
+	return Events.PayloadURL(e)
 }
 
 type EventHandler interface {

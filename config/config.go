@@ -3,6 +3,7 @@ package config
 import "github.com/spf13/viper"
 
 var (
+	Bucket               string
 	Env                  string
 	LogSql               bool
 	MigrationsPath       string
@@ -33,6 +34,9 @@ func init() {
 
 	Env = viper.GetString("Env")
 	LogSql = viper.GetBool("LogSql")
+
+	// Event Blob Storage
+	Bucket = viper.GetString("Bucket")
 
 	// jwt
 	TokenSigningKey = []byte(viper.GetString("TokenSigningKey"))
