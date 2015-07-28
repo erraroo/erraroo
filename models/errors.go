@@ -14,20 +14,17 @@ type ErrorsStore interface {
 	FindByID(int64) (*Error, error)
 	Update(*Error) error
 	Touch(*Error) error
-	AddTags(*Error, []Tag) error
 }
 
 type ErrorQuery struct {
 	ProjectID int64
 	Status    string
-	Tags      []Tag
 	Libaries  []int64
 	QueryOptions
 }
 
 type ErrorResults struct {
 	Errors []*Error
-	Tags   []TagValue
 	Total  int64
 	Query  ErrorQuery
 }
@@ -135,54 +132,4 @@ func (s *errorsStore) FindByID(id int64) (*Error, error) {
 	}
 
 	return e, nil
-}
-
-func (s *errorsStore) AddTags(e *Error, tags []Tag) error {
-	for _, tag := range tags {
-		update := "update project_keys set values_seen=values_seen+1 where project_id=$1 and key=$2"
-		insert := "insert into project_keys (project_id, key, label) select $1,$2,$3"
-		upsert := "with upsert as (%s returning *) %s where not exists (select * from upsert);"
-		query := fmt.Sprintf(upsert, update, insert)
-
-		_, err := s.Exec(query, e.ProjectID, tag.Key, tag.Label)
-		if err != nil {
-			logger.Error("inserting project_keys", "err", err)
-			return err
-		}
-
-		update = "update project_key_values set times_seen=times_seen+1, last_seen=now_utc() where project_id=$1 and key=$2 and value=$3"
-		insert = "insert into project_key_values (project_id, key, value) select $1,$2,$3"
-		upsert = "with upsert as (%s returning *) %s where not exists (select * from upsert);"
-		query = fmt.Sprintf(upsert, update, insert)
-
-		_, err = s.Exec(query, e.ProjectID, tag.Key, tag.Value)
-		if err != nil {
-			logger.Error("inserting project_key_values", "err", err)
-			return err
-		}
-
-		update = "update error_keys set values_seen=values_seen+1 where project_id=$1 and key=$2 and error_id=$3"
-		insert = "insert into error_keys (project_id, key, error_id) select $1,$2,$3"
-		upsert = "with upsert as (%s returning *) %s where not exists (select * from upsert);"
-		query = fmt.Sprintf(upsert, update, insert)
-
-		_, err = s.Exec(query, e.ProjectID, tag.Key, e.ID)
-		if err != nil {
-			logger.Error("inserting error_keys", "err", err)
-			return err
-		}
-
-		update = "update error_key_values set times_seen=times_seen+1,last_seen=now_utc() where project_id=$1 and key=$2 and error_id=$3 and value=$4"
-		insert = "insert into error_key_values (project_id, key, error_id, value) select $1,$2,$3,$4"
-		upsert = "with upsert as (%s returning *) %s where not exists (select * from upsert);"
-		query = fmt.Sprintf(upsert, update, insert)
-
-		_, err = s.Exec(query, e.ProjectID, tag.Key, e.ID, tag.Value)
-		if err != nil {
-			logger.Error("inserting error_key_values", "err", err)
-			return err
-		}
-	}
-
-	return nil
 }

@@ -117,30 +117,6 @@ func (e *jsErrorEvent) Message() string {
 	return jse.Trace.Message
 }
 
-func (e *jsErrorEvent) Tags() []Tag {
-	js, _ := e.unmarshal()
-
-	tags := []Tag{}
-
-	if js.UserAgent != "" {
-		tags = append(tags, Tag{
-			Key:   "useragent",
-			Value: js.UserAgent,
-			Label: "UserAgent",
-		})
-	}
-
-	if js.URL != "" {
-		tags = append(tags, Tag{
-			Key:   "url",
-			Value: js.URL,
-			Label: "URL",
-		})
-	}
-
-	return tags
-}
-
 func (e *jsErrorEvent) Libaries() []Library {
 	js, _ := e.unmarshal()
 
