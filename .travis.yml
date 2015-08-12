@@ -3,6 +3,8 @@ go:
 - 1.4.2
 addons:
   postgresql: 9.3
+env:
+- AWS_REGION="us-east-1"
 services:
 - postgresql
 - redis-server
