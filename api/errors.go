@@ -25,7 +25,7 @@ type ErrorParams struct {
 func ErrorsIndex(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	projectID, err := QueryToID(r, "project_id")
 	if err != nil {
-		return err
+		return JSON(w, http.StatusBadRequest, "project_id param required")
 	}
 
 	project, err := models.Projects.FindByID(projectID)
