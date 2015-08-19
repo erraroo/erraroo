@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	NumberOfContextLines = 10
+	NumberOfContextLines = 20
 )
 
 type Resource struct {
