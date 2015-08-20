@@ -25,7 +25,7 @@ func InviteByEmail(from *models.User, to string) (*models.Invitation, error) {
 func InvitationDeliver(token string) error {
 	invitation, err := models.Invitations.FindByToken(token)
 	if err != nil {
-		logger.Error("finding invitation", "token", token, "err", err)
+		logger.Error("could not find invitation", "token", token, "err", err)
 		return err
 	}
 

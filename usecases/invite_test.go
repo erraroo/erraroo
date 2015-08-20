@@ -22,6 +22,8 @@ func TestInviteByEmail_DeliversEmail(t *testing.T) {
 	handler.Handle("invitation.deliver", func(job *rsq.Job) error {
 		var token string
 		json.Unmarshal(job.Payload, &token)
+
+		assert.Equal(t, token, invite.Token, "passed correct token into job")
 		return InvitationDeliver(token)
 	})
 

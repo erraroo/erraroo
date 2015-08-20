@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -22,7 +23,8 @@ type Signin struct {
 }
 
 type Success struct {
-	Token string `json:"token"`
+	Token  string `json:"token"`
+	UserID string `json:"userID"`
 }
 
 func SessionsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
@@ -57,7 +59,7 @@ func SessionsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) err
 		return err
 	}
 
-	return JSON(w, http.StatusCreated, Success{tokenString})
+	return JSON(w, http.StatusCreated, Success{tokenString, fmt.Sprintf("%d", user.ID)})
 }
 
 func SessionsDestroy(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {

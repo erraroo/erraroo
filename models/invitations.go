@@ -33,7 +33,7 @@ func (s *invitationsStore) Create(to string, user *User) (*Invitation, error) {
 		Address:   to,
 	}
 
-	return invitation, s.Save(invitation).Error
+	return invitation, s.DB.Create(invitation).Error
 }
 
 func (s *invitationsStore) FindByToken(token string) (*Invitation, error) {

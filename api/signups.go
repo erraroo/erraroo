@@ -16,7 +16,7 @@ type SignupRequest struct {
 }
 
 // Validate the request to ensure that it is acceptable
-func (s SignupRequest) Validate() (models.ValidationErrors, error) {
+func (s *SignupRequest) Validate() (models.ValidationErrors, error) {
 	var err error
 
 	errs := models.NewValidationErrors()
@@ -53,8 +53,8 @@ type Signup struct {
 }
 
 func SignupsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
-	request := SignupRequest{}
-	Decode(r, &request)
+	request := &SignupRequest{}
+	Decode(r, request)
 
 	errors, err := request.Validate()
 	if err != nil {
@@ -88,8 +88,9 @@ func SignupsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) erro
 	return JSON(w, http.StatusCreated, serializers.NewShowUser(user, prefs))
 }
 
-func accountForRequest(request SignupRequest) (*models.Account, error) {
+func accountForRequest(request *SignupRequest) (*models.Account, error) {
 	params := request.Signup
+
 	if request.invitation != nil {
 		request.invitation.Accepted = true
 		err := models.Invitations.Update(request.invitation)
