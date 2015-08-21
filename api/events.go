@@ -39,7 +39,11 @@ func EventsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error
 	}
 
 	request := events.CreateEventRequest{}
-	Decode(r, &request)
+	err = Decode(r, &request)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return nil
+	}
 
 	err = events.Ingest(token, request)
 	if err == models.ErrNotFound {
