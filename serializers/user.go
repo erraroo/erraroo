@@ -8,30 +8,38 @@ import (
 	"github.com/erraroo/erraroo/models"
 )
 
+type Account struct {
+	ID int64
+}
+
 type User struct {
-	ID     int64
-	Email  string
-	Avatar string
-	PrefID int64
+	ID        int64
+	AccountID int64
+	Avatar    string
+	Email     string
+	PrefID    int64
 }
 
 func NewUser(user *models.User) User {
 	return User{
-		ID:     user.ID,
-		Email:  user.Email,
-		Avatar: gravatar(user.Email),
-		PrefID: user.ID,
+		ID:        user.ID,
+		AccountID: user.AccountID,
+		Avatar:    gravatar(user.Email),
+		Email:     user.Email,
+		PrefID:    user.ID,
 	}
 }
 
 type ShowUser struct {
-	User  User
-	Prefs []Pref
+	User     User
+	Prefs    []Pref
+	Accounts []Account
 }
 
 func NewShowUser(user *models.User, pref *models.Pref) ShowUser {
 	prefs := []Pref{NewPref(pref)}
-	return ShowUser{NewUser(user), prefs}
+	accounts := []Account{Account{user.AccountID}}
+	return ShowUser{NewUser(user), prefs, accounts}
 }
 
 func gravatar(email string) string {

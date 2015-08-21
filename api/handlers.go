@@ -1,7 +1,9 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -75,10 +77,10 @@ func Backlog(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	}
 
 	channels := puller.Channels{}
-	for key, id := range r.Form {
-		lastID, _ := strconv.Atoi(id[0])
-		channels[key] = int64(lastID)
-	}
+	accountKey := fmt.Sprintf("accounts.%d", ctx.User.AccountID)
+
+	channels["global"] = lastID(r.Form, "global")
+	channels[accountKey] = lastID(r.Form, accountKey)
 
 	backlog, err := bus.Pull(channels, 60*time.Second)
 	if err != nil {
@@ -87,4 +89,17 @@ func Backlog(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	}
 
 	return JSON(w, http.StatusOK, backlog)
+}
+
+func lastID(values url.Values, key string) int64 {
+	if value, ok := values[key]; ok {
+		if len(value) > 0 {
+			if i, err := strconv.Atoi(value[0]); err == nil {
+				return int64(i)
+			}
+
+		}
+	}
+
+	return 0
 }
