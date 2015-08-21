@@ -79,7 +79,7 @@ func (s *errorsStore) FindQuery(q ErrorQuery) (ErrorResults, error) {
 		Errors: []*Error{},
 	}
 
-	scope := s.Table("errors").Debug()
+	scope := s.Table("errors")
 	scope = scope.Where("errors.project_id=?", q.ProjectID)
 
 	switch q.Status {
