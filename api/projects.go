@@ -1,6 +1,7 @@
 package api
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/erraroo/erraroo/cx"
@@ -100,6 +101,22 @@ func ProjectLibaries(w http.ResponseWriter, r *http.Request, ctx *cx.Context) er
 	}
 
 	return JSON(w, http.StatusOK, serializers.NewLibraries(libaries))
+}
+
+func ProjectsDelete(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
+	project, err := getAuthorizedProject(r, ctx)
+	if err != nil {
+		return err
+	}
+
+	err = models.Projects.Delete(project)
+	if err != nil {
+		return err
+	}
+
+	log.Println(project)
+
+	return JSON(w, http.StatusOK, nil)
 }
 
 func getAuthorizedProject(r *http.Request, ctx *cx.Context) (*models.Project, error) {

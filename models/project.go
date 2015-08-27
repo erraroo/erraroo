@@ -43,6 +43,9 @@ type ProjectsStore interface {
 
 	// Update updates the project
 	Update(*Project) error
+
+	// Delete removes the project and all it's data from the store
+	Delete(*Project) error
 }
 
 type projectsStore struct{ *Store }
@@ -115,4 +118,8 @@ func (s *projectsStore) ByAccountID(id int64) ([]*Project, error) {
 
 func (s *projectsStore) Update(project *Project) error {
 	return s.Omit("unresolved_count").Save(project).Error
+}
+
+func (s *projectsStore) Delete(project *Project) error {
+	return s.DB.Delete(project).Error
 }

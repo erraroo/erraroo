@@ -1,7 +1,7 @@
 drop table if exists libraries cascade;
 create table libraries (
   id bigserial not null primary key,
-  project_id bigint references projects(id) not null,
+  project_id bigint references projects(id) on delete cascade not null,
   name text not null,
   version text not null,
   created_at timestamp without time zone not null default now(),
@@ -13,8 +13,8 @@ create unique index libraries_uniq_idx on libraries using btree(project_id, name
 
 drop table if exists error_libraries;
 create table error_libraries (
-  error_id bigint references errors(id) not null,
-  library_id bigint references libraries(id) not null,
+  error_id bigint references errors(id) on delete cascade not null,
+  library_id bigint references libraries(id) on delete cascade not null,
   primary key(error_id, library_id)
 );
 
