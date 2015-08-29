@@ -57,3 +57,18 @@ func TestProjectShow(t *testing.T) {
 	assert.Equal(t, project.Name, response.Project.Name)
 	assert.Equal(t, project.Token, response.Project.Token)
 }
+
+func TestProjectsRegenerateToken(t *testing.T) {
+	project, _ := models.Projects.Create("test project", _account.ID)
+
+	url := fmt.Sprintf("/api/v1/projects/%d/regenerate-token", project.ID)
+	req, res := rr("POST", url, nil)
+	req.Header.Add("Authorization", _token)
+
+	_app.ServeHTTP(res, req)
+	assert.Equal(t, http.StatusOK, res.Code)
+
+	response := serializers.ShowProject{}
+	json.NewDecoder(res.Body).Decode(&response)
+	assert.NotEqual(t, response.Project.Token, project.Token)
+}
