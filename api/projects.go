@@ -1,7 +1,6 @@
 package api
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/erraroo/erraroo/cx"
@@ -114,9 +113,28 @@ func ProjectsDelete(w http.ResponseWriter, r *http.Request, ctx *cx.Context) err
 		return err
 	}
 
-	log.Println(project)
-
 	return JSON(w, http.StatusOK, nil)
+}
+
+func ProjectsRegenerateToken(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
+	project, err := getAuthorizedProject(r, ctx)
+	if err != nil {
+		return err
+	}
+
+	token, err := models.Projects.GenerateToken()
+	if err != nil {
+		return err
+	}
+
+	project.Token = token
+
+	err = models.Projects.Update(project)
+	if err != nil {
+		return err
+	}
+
+	return JSON(w, http.StatusOK, serializers.NewShowProject(project))
 }
 
 func getAuthorizedProject(r *http.Request, ctx *cx.Context) (*models.Project, error) {
