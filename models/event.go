@@ -36,10 +36,6 @@ func (e *Event) Name() string {
 	return e.Handler().Name()
 }
 
-func (e *Event) Libaries() []Library {
-	return e.Handler().Libaries()
-}
-
 func (e *Event) Handler() EventHandler {
 	switch e.Kind {
 	case "js.error":
@@ -50,7 +46,7 @@ func (e *Event) Handler() EventHandler {
 }
 
 func (e *Event) PayloadKey() string {
-	t := e.CreatedAt.Format("2006/01/02")
+	t := e.CreatedAt.UTC().Format("2006/01/02")
 	return fmt.Sprintf("projects/%d/events/%s/%d/payload.json", e.ProjectID, t, e.ID)
 }
 
@@ -63,5 +59,4 @@ type EventHandler interface {
 	Message() string
 	Name() string
 	PreCreate() error
-	Libaries() []Library
 }

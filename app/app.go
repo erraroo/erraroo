@@ -68,7 +68,6 @@ func (a *App) setupMux() {
 	a.Router.Handle("/api/v1/projects/{id}", a.AuthroziedHandler(api.ProjectsShow)).Methods("GET")
 	a.Router.Handle("/api/v1/projects/{id}", a.AuthroziedHandler(api.ProjectsUpdate)).Methods("PUT")
 	a.Router.Handle("/api/v1/projects/{id}", a.AuthroziedHandler(api.ProjectsDelete)).Methods("DELETE")
-	a.Router.Handle("/api/v1/projects/{id}/libraries", a.AuthroziedHandler(api.ProjectLibaries)).Methods("GET")
 	a.Router.Handle("/api/v1/projects/{id}/regenerate-token", a.AuthroziedHandler(api.ProjectsRegenerateToken)).Methods("POST")
 	a.Router.Handle("/api/v1/events/{id}", a.AuthroziedHandler(api.EventsShow)).Methods("GET")
 	a.Router.Handle("/api/v1/events", a.AuthroziedHandler(api.EventsIndex)).Methods("GET")

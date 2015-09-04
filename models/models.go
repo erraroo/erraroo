@@ -17,7 +17,6 @@ func Setup(config string) error {
 	Accounts = &accountsStore{store}
 	Events = &eventsStore{store, s3.New(nil)}
 	Errors = &errorsStore{store}
-	Libaries = &libariesStore{store}
 	Invitations = &invitationsStore{store}
 	PasswordRecovers = &passwordRecoversStore{store}
 	Plans = &plansStore{store}

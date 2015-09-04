@@ -117,18 +117,6 @@ func (e *jsErrorEvent) Message() string {
 	return jse.Trace.Message
 }
 
-func (e *jsErrorEvent) Libaries() []Library {
-	js, _ := e.unmarshal()
-
-	libs := []Library{}
-
-	for _, l := range js.Libaries {
-		libs = append(libs, Library{ProjectID: e.ProjectID, Name: l.Name, Version: l.Version})
-	}
-
-	return libs
-}
-
 func populateFrameContext(f *frame, resources *resourcesStore) error {
 	resource, err := resources.FindByURL(f.URL)
 	if err != nil {
