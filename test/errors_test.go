@@ -35,11 +35,11 @@ func TestCreateEvent(t *testing.T) {
 
 	assert.Equal(t, http.StatusCreated, res.Code)
 
-	errors, err := models.Events.ListForProject(project)
+	events, err := models.Events.FindQuery(models.EventQuery{ProjectID: project.ID})
 	assert.Nil(t, err)
-	assert.NotEmpty(t, errors)
+	assert.NotEmpty(t, events.Events)
 
-	e := errors[0]
+	e := events.Events[0]
 	assert.NotEmpty(t, e.Checksum, "the checksum was generated")
 
 	jobs.Work(_app)

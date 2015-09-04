@@ -15,7 +15,6 @@ import (
 
 // EventsStore is the interface to event data
 type EventsStore interface {
-	ListForProject(*Project) ([]*Event, error)
 	FindByID(int64) (*Event, error)
 	FindQuery(EventQuery) (EventResults, error)
 	Insert(*Event) error
@@ -40,12 +39,6 @@ type eventsStore struct {
 	service *s3.S3
 }
 
-func (s *eventsStore) ListForProject(p *Project) ([]*Event, error) {
-	events := []*Event{}
-	query := s.Where("project_id=?", p.ID).Order("created_at desc").Limit(100)
-	return events, query.Find(&events).Error
-}
-
 func (s *eventsStore) FindByID(id int64) (*Event, error) {
 	e := &Event{}
 	o := s.First(&e, id)
@@ -62,11 +55,10 @@ func (s *eventsStore) Insert(e *Event) error {
 		return err
 	}
 
-	query := "insert into events (checksum, kind, project_id) values($1,$2,$3) returning id, created_at, updated_at"
+	query := "insert into events (checksum, kind, project_id) values($1,$2,$3) returning id, created_at"
 	err = s.QueryRow(query, e.Checksum, e.Kind, e.ProjectID).Scan(
 		&e.ID,
 		&e.CreatedAt,
-		&e.UpdatedAt,
 	)
 
 	return s.putPayload(e)

@@ -37,13 +37,11 @@ create table events (
   checksum   text not null,
   kind       text not null,
   project_id bigint references projects(id) on delete cascade not null,
-  created_at timestamp without time zone not null default now(),
-  updated_at timestamp without time zone not null default now()
+  created_at timestamp without time zone not null default now()
 );
 
 create index events_project_id on events (project_id);
 create index events_checksum on events (checksum);
-create index events_kind on events (kind);
 
 create table errors (
   id bigserial not null primary key,

@@ -13,7 +13,6 @@ type Event struct {
 	Kind      string
 	ProjectID int64
 	CreatedAt time.Time
-	UpdatedAt time.Time
 }
 
 func NewEvent(p *Project, kind string, payload string) *Event {
