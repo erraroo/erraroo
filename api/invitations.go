@@ -46,7 +46,7 @@ func InvitationsShow(w http.ResponseWriter, r *http.Request, c *cx.Context) erro
 	invite, err := models.Invitations.FindByToken(token)
 	if err != nil {
 		logger.Error("finding token", "err", err, "token", token)
-		return nil
+		return err
 	}
 
 	return JSON(w, http.StatusOK, serializers.NewShowInvitation(invite))
