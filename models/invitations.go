@@ -10,6 +10,7 @@ type InvitationsStore interface {
 	Create(address string, user *User) (*Invitation, error)
 	FindByToken(string) (*Invitation, error)
 	Update(*Invitation) error
+	Delete(*Invitation) error
 }
 
 type invitationsStore struct{ *Store }
@@ -58,4 +59,8 @@ func (s *invitationsStore) Update(i *Invitation) error {
 	}
 
 	return nil
+}
+
+func (s *invitationsStore) Delete(i *Invitation) error {
+	return s.DB.Delete(i).Error
 }

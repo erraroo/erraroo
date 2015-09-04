@@ -34,7 +34,8 @@ func InvitationsCreate(w http.ResponseWriter, r *http.Request, c *cx.Context) er
 
 	invitation, err := usecases.InviteByEmail(c.User, request.Invitation.Address)
 	if err != nil {
-		logger.Error("usercases.InviteByEmail", "err", err)
+		logger.Error("usecases.InviteByEmail", "err", err)
+		return err
 	}
 
 	return JSON(w, http.StatusCreated, serializers.NewShowInvitation(invitation))
@@ -42,11 +43,9 @@ func InvitationsCreate(w http.ResponseWriter, r *http.Request, c *cx.Context) er
 
 func InvitationsShow(w http.ResponseWriter, r *http.Request, c *cx.Context) error {
 	token := mux.Vars(r)["token"]
-	logger.Info("show token", "token", token)
-
 	invite, err := models.Invitations.FindByToken(token)
 	if err != nil {
-		logger.Error("finding token", "err", err)
+		logger.Error("finding token", "err", err, "token", token)
 		return nil
 	}
 
@@ -56,8 +55,25 @@ func InvitationsShow(w http.ResponseWriter, r *http.Request, c *cx.Context) erro
 func InvitationsIndex(w http.ResponseWriter, r *http.Request, c *cx.Context) error {
 	invitations, err := models.Invitations.ListForUser(c.User)
 	if err != nil {
-		logger.Error("usercases.InviteByEmail", "err", err)
+		logger.Error("listing invitations", "err", err)
+		return err
 	}
 
-	return JSON(w, http.StatusCreated, serializers.NewInvitations(invitations))
+	return JSON(w, http.StatusOK, serializers.NewInvitations(invitations))
+}
+
+func InvitationsDelete(w http.ResponseWriter, r *http.Request, c *cx.Context) error {
+	token := mux.Vars(r)["token"]
+	invite, err := models.Invitations.FindByToken(token)
+	if !c.User.CanSee(invite) {
+		return models.ErrNotFound
+	}
+
+	err = models.Invitations.Delete(invite)
+	if err != nil {
+		logger.Error("deleting an invitation", "err", err)
+		return err
+	}
+
+	return JSON(w, http.StatusNoContent, nil)
 }
