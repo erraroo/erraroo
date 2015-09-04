@@ -1,11 +1,6 @@
 package models
 
-import (
-	"fmt"
-	"strings"
-
-	"github.com/erraroo/erraroo/logger"
-)
+import "github.com/erraroo/erraroo/logger"
 
 // EventsStore is the interface to error data
 type ErrorsStore interface {
@@ -78,19 +73,6 @@ func (s *errorsStore) FindQuery(q ErrorQuery) (ErrorResults, error) {
 	case "muted":
 		scope = scope.Where("errors.muted=?", true)
 	}
-
-	joins := []string{}
-	for i, lib := range q.Libaries {
-		name := fmt.Sprintf("el_%d", i)
-
-		join := fmt.Sprintf("inner join error_libraries %s on (%s.error_id=errors.id)", name, name)
-		joins = append(joins, join)
-
-		where := fmt.Sprintf("%s.library_id=?", name)
-		scope = scope.Where(where, lib)
-	}
-
-	scope = scope.Joins(strings.Join(joins, " "))
 
 	o := scope.Count(&errors.Total)
 	if o.Error != nil {
