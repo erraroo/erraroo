@@ -13,7 +13,11 @@ import (
 	"github.com/erraroo/erraroo/usecases"
 )
 
-const rateLimitDuration = 60 * time.Second
+const (
+	rateLimitDuration             = 60 * time.Second
+	notificationRateLimitDuration = 15 * time.Second
+	notificationRateLimitMax      = 1
+)
 
 func EventsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	token := r.Header.Get("X-Token")
@@ -21,6 +25,7 @@ func EventsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error
 		return errors.New("token was blank")
 	}
 
+	// TODO: cache
 	plan, err := models.Plans.FindByToken(token)
 	if err != nil {
 		return err
@@ -28,14 +33,13 @@ func EventsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error
 
 	ok, err := Limiter.Check(token, rateLimitDuration, plan.RequestsPerMinute)
 	if err != nil {
-		logger.Error("Limiter.Check", "err", err)
+		logger.Error("Limiter.Check", "key", token, "err", err)
 		return err
 	}
 
 	if !ok {
 		w.WriteHeader(420)
-		logger.Error("rate limit exceeded", "token", token)
-		return usecases.RateExceeded(token)
+		return tryNotify(token)
 	}
 
 	request := events.CreateEventRequest{}
@@ -109,4 +113,21 @@ func EventsIndex(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error 
 	}
 
 	return JSON(w, http.StatusOK, serializers.NewEvents(events))
+}
+
+func tryNotify(token string) error {
+	key := token + "-exceeded"
+
+	ok, err := Limiter.Check(key, 10*time.Second, 1)
+	if err != nil {
+		logger.Error("checking notifcation rate limit", "key", key, "err", err)
+		return err
+	}
+
+	if !ok {
+		logger.Debug("already notified", "key", key)
+		return nil
+	} else {
+		return usecases.RateExceeded(token)
+	}
 }

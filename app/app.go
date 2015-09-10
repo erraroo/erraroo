@@ -250,7 +250,8 @@ func (a *App) JobHandler(fn AppJobHandler) rsq.JobHandlerFunc {
 		if err != nil {
 			logger.Error(err.Error(), "name", job.Name, "payload", fmt.Sprintf("%s", job.Payload), "runtime", time.Since(start))
 		} else {
-			logger.Info("ran", "name", job.Name, "payload", fmt.Sprintf("%s", job.Payload), "runtime", time.Since(start))
+			//logger.Info("ran", "name", job.Name, "payload", fmt.Sprintf("%s", job.Payload), "runtime", time.Since(start))
+			logger.Info("ran", "name", job.Name, "runtime", time.Since(start))
 		}
 
 		return err

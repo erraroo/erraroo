@@ -42,7 +42,7 @@ func main() {
 	})
 	defer client.Close()
 
-	api.Limiter = api.NoLimiter()
+	api.Limiter = api.NewRedisRateLimiter(client)
 	bus.Puller = puller.New(puller.Options{
 		MaxBacklogSize: 100,
 		Redis:          client,
