@@ -8,11 +8,11 @@ import (
 // Event is the entity that stores error data
 type Event struct {
 	ID        int64
-	Payload   string
 	Checksum  string
 	Kind      string
 	ProjectID int64
 	CreatedAt time.Time
+	Payload   string `json:"-"`
 }
 
 func NewEvent(p *Project, kind string, payload string) *Event {

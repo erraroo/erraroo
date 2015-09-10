@@ -112,7 +112,7 @@ func (s *projectsStore) FindByID(id int64) (*Project, error) {
 func (s *projectsStore) ByAccountID(id int64) ([]*Project, error) {
 	projects := []*Project{}
 	sel := []string{"projects.*", unresolvedCount}
-	out := s.Where("projects.account_id=?", id).Select(sel).Find(&projects)
+	out := s.Where("projects.account_id=?", id).Order("projects.name asc").Select(sel).Find(&projects)
 	return projects, out.Error
 }
 

@@ -91,16 +91,6 @@ func (a *App) setupMux() {
 
 func (a *App) setupQueue() {
 	a.JobRouter = rsq.NewJobRouter()
-	a.JobRouter.Handle("event.process", a.JobHandler(func(job *rsq.Job, c *cx.Context) error {
-		var id int64
-		err := json.Unmarshal(job.Payload, &id)
-		if err != nil {
-			return err
-		}
-
-		return usecases.ProcessEvent(id)
-	}))
-
 	a.JobRouter.Handle("invitation.deliver", a.JobHandler(func(job *rsq.Job, c *cx.Context) error {
 		var token string
 		err := json.Unmarshal(job.Payload, &token)
