@@ -15,7 +15,7 @@ import (
 
 const (
 	rateLimitDuration             = 60 * time.Second
-	notificationRateLimitDuration = 15 * time.Second
+	notificationRateLimitDuration = 10 * time.Minute
 	notificationRateLimitMax      = 1
 )
 
