@@ -27,6 +27,10 @@ func Info(msg string, args ...interface{}) {
 	logger.WithFields(makeFields(args...)).Info(msg)
 }
 
+func Warn(msg string, args ...interface{}) {
+	logger.WithFields(makeFields(args...)).Warn(msg)
+}
+
 func Error(msg string, args ...interface{}) {
 	args = append(args, "backtrace")
 	args = append(args, backtrace())
