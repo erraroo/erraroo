@@ -137,12 +137,13 @@ func TestCreateEventIsRateLimited(t *testing.T) {
 type onceLimter struct{ count int }
 
 func (o *onceLimter) Check(key string, d time.Duration, count int) (bool, error) {
-	log.Println(key)
 	if o.count == 0 {
+		log.Printf("limiting %s\n", key)
 		o.count++
 		return false, nil
 	}
 
+	log.Printf("allowing %s\n", key)
 	return true, nil
 }
 
