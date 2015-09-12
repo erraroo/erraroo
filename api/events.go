@@ -15,8 +15,12 @@ import (
 
 const (
 	rateLimitDuration             = 60 * time.Second
-	notificationRateLimitDuration = 10 * time.Minute
+	notificationRateLimitDuration = 30 * time.Minute
 	notificationRateLimitMax      = 1
+)
+
+const (
+	StatusSlowYourRoll = 420
 )
 
 func EventsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
@@ -38,7 +42,7 @@ func EventsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error
 	}
 
 	if !ok {
-		w.WriteHeader(420)
+		w.WriteHeader(StatusSlowYourRoll)
 		return tryNotify(token)
 	}
 

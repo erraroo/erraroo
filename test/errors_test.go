@@ -3,9 +3,12 @@ package test
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"testing"
+	"time"
 
+	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/jobs"
 	"github.com/erraroo/erraroo/models"
 	"github.com/erraroo/erraroo/models/events"
@@ -108,4 +111,55 @@ func TestEventsByProjectId(t *testing.T) {
 	assert.Equal(t, len(response.Events), 1)
 	//assert.Equal(t, e.Payload, response.Events[0].Payload)
 	assert.Equal(t, e.Checksum, response.Events[0].Checksum)
+}
+
+type alwaysLimter struct{}
+
+func (a alwaysLimter) Check(key string, d time.Duration, count int) (bool, error) {
+	return false, nil
+}
+
+func TestCreateEventIsRateLimited(t *testing.T) {
+	api.Limiter = alwaysLimter{}
+	defer func() {
+		api.Limiter = api.NoLimiter()
+	}()
+
+	project, err := models.Projects.Create("test project", _account.ID)
+	assert.Nil(t, err)
+
+	req, res := rr("POST", "/api/v1/events", nil)
+	req.Header.Set("X-Token", project.Token)
+	_app.ServeHTTP(res, req)
+	assert.Equal(t, api.StatusSlowYourRoll, res.Code)
+}
+
+type onceLimter struct{ count int }
+
+func (o *onceLimter) Check(key string, d time.Duration, count int) (bool, error) {
+	log.Println(key)
+	if o.count == 0 {
+		o.count++
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func TestCreateEventIsRateLimitedNotifcationFiresOnce(t *testing.T) {
+	api.Limiter = &onceLimter{}
+	defer func() {
+		api.Limiter = api.NoLimiter()
+	}()
+
+	project, err := models.Projects.Create("test project", _account.ID)
+	assert.Nil(t, err)
+
+	req, res := rr("POST", "/api/v1/events", nil)
+	req.Header.Set("X-Token", project.Token)
+	_app.ServeHTTP(res, req)
+
+	notified, err := models.RateLimitNotifcations.WasRecentlyNotified(_account)
+	assert.Nil(t, err)
+	assert.True(t, notified)
 }

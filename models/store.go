@@ -17,17 +17,18 @@ import (
 )
 
 var (
-	store            *Store
-	Accounts         AccountsStore
-	Events           EventsStore
-	Errors           ErrorsStore
-	Invitations      InvitationsStore
-	PasswordRecovers PasswordRecoversStore
-	Plans            PlansStore
-	Prefs            PrefsStore
-	Projects         ProjectsStore
-	Timings          TimingsStore
-	Users            UsersStore
+	store                 *Store
+	Accounts              AccountsStore
+	Events                EventsStore
+	Errors                ErrorsStore
+	Invitations           InvitationsStore
+	PasswordRecovers      PasswordRecoversStore
+	Plans                 PlansStore
+	Prefs                 PrefsStore
+	Projects              ProjectsStore
+	RateLimitNotifcations RateLimitNotifcationsStore
+	Timings               TimingsStore
+	Users                 UsersStore
 )
 
 // Store is the abstraction used to interact with the

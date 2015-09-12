@@ -22,6 +22,7 @@ func Setup(config string) error {
 	Plans = &plansStore{store}
 	Prefs = &prefsStore{store}
 	Projects = &projectsStore{store}
+	RateLimitNotifcations = &rateLimitNotifcationsStore{store}
 	Timings = &timingsStore{store}
 	Users = &usersStore{store}
 

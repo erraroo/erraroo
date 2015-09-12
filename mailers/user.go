@@ -158,3 +158,43 @@ const passwordRecoverTemplate = `
 </html>
 {{end}}
 `
+
+func DeliverRateLimitNotifcation(user *models.User, project *models.Project) error {
+	body := bytes.NewBufferString("")
+
+	tmpl, err := template.New("T").Parse(rateLimitNotifcationTemplate)
+	if err != nil {
+		return err
+	}
+
+	view := rateLimitNotifcationView{
+		ProjectName: project.Name,
+		Subject:     "[erraroo] Rate Limit Exceeded",
+	}
+
+	err = tmpl.Execute(body, view)
+	if err != nil {
+		return err
+	}
+
+	return emailer.Send(user.Email, view.Subject, body.String())
+}
+
+type rateLimitNotifcationView struct {
+	ProjectName string
+	Subject     string
+}
+
+const rateLimitNotifcationTemplate = `
+{{define "T"}}
+<html>
+	<head>
+	</head>
+	<body>
+		<p>Hello New Friend!</p>
+		<p>Your project {{.ProjectName}} has execeeded it's rate limit.</p>
+		<p>I hope your app is ok friend :(</p>
+	</body>
+</html>
+{{end}}
+`
