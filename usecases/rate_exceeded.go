@@ -31,7 +31,7 @@ func RateExceeded(token string) error {
 		return err
 	}
 
-	users, err := models.Users.ByAccountID(project.AccountID)
+	users, err := models.Users.FindByAccountID(project.AccountID)
 	if err != nil {
 		return err
 	}

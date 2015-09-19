@@ -9,7 +9,7 @@ type UsersStore interface {
 	Exists(email string) bool
 	FindByEmail(email string) (*User, error)
 	Create(email, password string, account *Account) (*User, error)
-	ByAccountID(id int64) ([]*User, error)
+	FindByAccountID(id int64) ([]*User, error)
 	Update(*User) error
 }
 
@@ -65,7 +65,7 @@ func (s usersStore) Create(email, password string, account *Account) (*User, err
 	return user, s.Save(user).Error
 }
 
-func (s usersStore) ByAccountID(id int64) ([]*User, error) {
+func (s usersStore) FindByAccountID(id int64) ([]*User, error) {
 	users := []*User{}
 	return users, s.Where("account_id=?", id).Find(&users).Error
 }

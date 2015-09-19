@@ -58,7 +58,7 @@ func AfterErrorEventCreated(event *models.Event) error {
 }
 
 func notifyUsersOfNewError(project *models.Project, group *models.Error) error {
-	users, err := models.Users.ByAccountID(project.AccountID)
+	users, err := models.Users.FindByAccountID(project.AccountID)
 	if err != nil {
 		return err
 	}
