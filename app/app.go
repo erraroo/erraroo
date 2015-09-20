@@ -91,6 +91,11 @@ func (a *App) setupMux() {
 
 func (a *App) setupQueue() {
 	a.JobRouter = rsq.NewJobRouter()
+	a.JobRouter.NotFoundHandler = func(job *rsq.Job) error {
+		logger.Error("no job handler", "name", job.Name, "payload", fmt.Sprintf("%s", job.Payload))
+		return errors.New("no job handler")
+	}
+
 	a.JobRouter.Handle("invitation.deliver", a.JobHandler(func(job *rsq.Job, c *cx.Context) error {
 		var token string
 		err := json.Unmarshal(job.Payload, &token)
