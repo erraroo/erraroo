@@ -34,7 +34,7 @@ func TestRatelimiter(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, ok, false)
 
-	time.Sleep(5 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 
 	ok, err = limiter.Check(key, interval, max)
 	assert.Nil(t, err)
