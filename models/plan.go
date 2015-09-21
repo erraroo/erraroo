@@ -129,7 +129,7 @@ func NewPlanCache() *planCache {
 		plans:   map[string]*Plan{},
 		expires: map[string]time.Time{},
 		lock:    &sync.RWMutex{},
-		ttl:     10 * time.Second,
+		ttl:     1 * time.Minute,
 	}
 }
 
