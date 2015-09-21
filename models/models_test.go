@@ -16,7 +16,7 @@ var (
 func TestMain(m *testing.M) {
 	config.Env = "test"
 	config.Postgres = "dbname=erraroo_test sslmode=disable"
-	Setup(config.Postgres)
+	Setup()
 
 	SetupForTesting()
 	defer Shutdown()

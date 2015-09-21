@@ -4,14 +4,17 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/erraroo/erraroo/emailer"
 	_ "github.com/lib/pq"
+	"gopkg.in/redis.v3"
 )
 
-func Setup(config string) error {
+var ()
+
+func Setup() (*redis.Client, error) {
 	var err error
 
-	store, err = NewStore(config)
+	store, err = NewStore()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	Accounts = &accountsStore{store}
@@ -26,7 +29,7 @@ func Setup(config string) error {
 	Timings = &timingsStore{store}
 	Users = &usersStore{store}
 
-	return nil
+	return store.redis, err
 }
 
 func Shutdown() {

@@ -2,6 +2,8 @@ package models
 
 import (
 	"database/sql"
+	"sync"
+	"time"
 
 	"github.com/erraroo/erraroo/logger"
 )
@@ -43,6 +45,23 @@ type plansStore struct {
 
 func (s *plansStore) FindByToken(token string) (*Plan, error) {
 	p := &Plan{RequestsPerMinute: 20, DataRetentionInDays: 7}
+
+	query := "select plans.* from plans join projects on projects.token = $1 and projects.account_id = plans.account_id limit 1;"
+	err := s.QueryRow(query, token).Scan(
+		&p.AccountID,
+		&p.DataRetentionInDays,
+		&p.RequestsPerMinute,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, ErrNotFound
+	}
+
+	if err != nil {
+		logger.Error("finding plan by token", "token", token, "err", err)
+		return nil, err
+	}
+
 	return p, nil
 }
 
@@ -96,4 +115,48 @@ func (s *plansStore) Update(plan *Plan) error {
 	query := "update plans set data_retention_in_days=$1, requests_per_minute=$2 where account_id=$3"
 	_, err := s.Exec(query, plan.DataRetentionInDays, plan.RequestsPerMinute, plan.AccountID)
 	return err
+}
+
+type planCache struct {
+	plans   map[string]*Plan
+	expires map[string]time.Time
+	lock    *sync.RWMutex
+	ttl     time.Duration
+}
+
+func NewPlanCache() *planCache {
+	return &planCache{
+		plans:   map[string]*Plan{},
+		expires: map[string]time.Time{},
+		lock:    &sync.RWMutex{},
+		ttl:     10 * time.Second,
+	}
+}
+
+func (cache *planCache) FindByToken(token string) (*Plan, error) {
+	cache.lock.RLock()
+	plan := cache.plans[token]
+	expires, cached := cache.expires[token]
+	cache.lock.RUnlock()
+
+	if cached && expires.After(time.Now()) {
+		return plan, nil
+	}
+
+	return cache.put(token)
+}
+
+func (cache *planCache) put(token string) (*Plan, error) {
+	plan, err := Plans.FindByToken(token)
+	if err != nil {
+		return nil, err
+	}
+
+	cache.lock.Lock()
+	cache.plans[token] = plan
+	cache.expires[token] = time.Now().Add(cache.ttl)
+	cache.lock.Unlock()
+
+	logger.Info("cached plan", "token", token, "plan", plan)
+	return plan, nil
 }

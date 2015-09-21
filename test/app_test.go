@@ -30,7 +30,8 @@ func TestMain(m *testing.M) {
 	config.Env = "test"
 	config.Postgres = "dbname=erraroo_test sslmode=disable"
 
-	models.Setup(config.Postgres)
+	models.Setup()
+	models.SetupForTesting()
 	api.Limiter = api.NoLimiter()
 
 	_app = app.New()

@@ -23,7 +23,12 @@ func TestCreateAccount(t *testing.T) {
 }
 
 func TestCreateEvent(t *testing.T) {
-	project, _ := models.Projects.Create("test project", _account.ID)
+	project, err := models.Projects.Create("test project", _account.ID)
+	assert.Nil(t, err)
+
+	plan, err := models.Plans.Create(_account, "default")
+	assert.Nil(t, err)
+	assert.NotNil(t, plan)
 
 	request := events.CreateEventRequest{
 		Kind: "js.error",

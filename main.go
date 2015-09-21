@@ -6,9 +6,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
-
-	"gopkg.in/redis.v3"
 
 	"github.com/codegangsta/cli"
 	"github.com/erraroo/erraroo/api"
@@ -24,7 +21,7 @@ import (
 )
 
 func main() {
-	err := models.Setup(config.Postgres)
+	client, err := models.Setup()
 	if err != nil {
 		logger.Fatal("could not connect to database", "err", err)
 	}
@@ -34,13 +31,6 @@ func main() {
 		MessagesPerWorker: config.SqsMessagesPerWorker,
 		QueueURL:          config.SqsQueueURL,
 	}))
-
-	client := redis.NewClient(&redis.Options{
-		Addr:        config.Redis,
-		PoolSize:    10,
-		PoolTimeout: 5 * time.Second,
-	})
-	defer client.Close()
 
 	api.Limiter = api.NewRedisRateLimiter(client)
 	bus.Puller = puller.New(puller.Options{

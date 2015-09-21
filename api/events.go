@@ -23,14 +23,17 @@ const (
 	StatusSlowYourRoll = 420
 )
 
+var (
+	planCache = models.NewPlanCache()
+)
+
 func EventsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	token := r.Header.Get("X-Token")
 	if token == "" {
 		return errors.New("token was blank")
 	}
 
-	// TODO: cache
-	plan, err := models.Plans.FindByToken(token)
+	plan, err := planCache.FindByToken(token)
 	if err != nil {
 		return err
 	}

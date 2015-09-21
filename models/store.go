@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"gopkg.in/redis.v3"
+
 	"go/build"
 
 	"github.com/erraroo/erraroo/config"
@@ -35,11 +37,12 @@ var (
 // database.
 type Store struct {
 	gorm.DB
+	redis *redis.Client
 }
 
 // NewStore initializes a new Store
-func NewStore(c string) (*Store, error) {
-	dbGorm, err := gorm.Open("postgres", c)
+func NewStore() (*Store, error) {
+	dbGorm, err := gorm.Open("postgres", config.Postgres)
 	if err != nil {
 		logger.Error("could not connect to postgres", "err", err)
 		return nil, err
@@ -48,12 +51,19 @@ func NewStore(c string) (*Store, error) {
 	dbGorm.DB().SetMaxOpenConns(10)
 	dbGorm.LogMode(config.LogSql)
 
-	return &Store{dbGorm}, nil
+	client := redis.NewClient(&redis.Options{
+		Addr:        config.Redis,
+		PoolSize:    10,
+		PoolTimeout: 5 * time.Second,
+	})
+
+	return &Store{dbGorm, client}, nil
 }
 
 // Close closes all the connections
 func (s *Store) Close() {
 	s.DB.Close()
+	s.redis.Close()
 }
 
 // Migrate the database to the latest version
