@@ -21,9 +21,9 @@ type jsEvent struct {
 }
 
 type jsLog struct {
-	Level     string  `json:"level"`
-	Timestamp float64 `json:"timestamp"`
-	Message   string  `json:"message"`
+	Level     string                 `json:"level"`
+	Timestamp float64                `json:"timestamp"`
+	Payload   map[string]interface{} `json:"payload"`
 }
 
 type jsEventLibrary struct {
