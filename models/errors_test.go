@@ -88,15 +88,15 @@ func TestErrorsAreOrderedCorrectly(t *testing.T) {
 	errors, err := Errors.FindQuery(query)
 	assert.Nil(t, err)
 	assert.NotEmpty(t, errors.Errors)
-	assert.Equal(t, errors.Errors[0].ID, error1.ID)
-	assert.Equal(t, errors.Errors[1].ID, error2.ID)
+	assert.Equal(t, errors.Errors[0].ID, error2.ID)
+	assert.Equal(t, errors.Errors[1].ID, error1.ID)
 
-	Errors.Touch(error2)
+	Errors.Touch(error1)
 	errors, err = Errors.FindQuery(query)
 	assert.Nil(t, err)
 	assert.NotEmpty(t, errors.Errors)
-	assert.Equal(t, errors.Errors[0].ID, error2.ID)
-	assert.Equal(t, errors.Errors[1].ID, error1.ID)
+	assert.Equal(t, errors.Errors[0].ID, error1.ID)
+	assert.Equal(t, errors.Errors[1].ID, error2.ID)
 }
 
 func TestErrors_TouchCountsNumberOfOccurrences(t *testing.T) {
