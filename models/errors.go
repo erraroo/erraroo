@@ -80,7 +80,7 @@ func (s *errorsStore) FindQuery(q ErrorQuery) (ErrorResults, error) {
 	}
 
 	scope = scope.Limit(q.PerPageOrDefault()).Offset(q.Offset())
-	scope.Order("errors.last_seen_at desc")
+	scope = scope.Order("errors.last_seen_at desc")
 
 	o = scope.Find(&errors.Errors)
 	if o.Error != nil {
