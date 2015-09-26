@@ -1,5 +1,11 @@
 package models
 
+import (
+	"errors"
+
+	"github.com/erraroo/erraroo/logger"
+)
+
 type TimingsStore interface {
 	Create(project *Project, data string) (*Timing, error)
 	Update(*Timing) error
@@ -9,6 +15,11 @@ type TimingsStore interface {
 type timingsStore struct{ *Store }
 
 func (s *timingsStore) Create(project *Project, data string) (*Timing, error) {
+	if isEmpty(data) {
+		logger.Error("null timing data", "project", project.ID, "data", data)
+		return nil, errors.New("empty or null timing data")
+	}
+
 	timing := &Timing{}
 	o := s.Where("project_id=? and created_at=date_trunc('hour', now_utc())", project.ID).First(&timing)
 	if o.RecordNotFound() {
@@ -40,4 +51,8 @@ func (s *timingsStore) Last7Days(project *Project) ([]*Timing, error) {
 	scope = scope.Where("created_at > now_utc()::date - interval '7d'")
 	scope = scope.Order("created_at desc")
 	return timings, scope.Find(&timings).Error
+}
+
+func isEmpty(s string) bool {
+	return s == "null" || s == ""
 }

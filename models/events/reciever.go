@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/erraroo/erraroo/jobs"
+	"github.com/erraroo/erraroo/logger"
 	"github.com/erraroo/erraroo/models"
 )
 
@@ -36,7 +37,12 @@ func Ingest(token string, request CreateEventRequest) error {
 		}
 
 	case "js.timing":
-		raw, _ := json.Marshal(request.Data)
+		raw, err := json.Marshal(request.Data)
+		if err != nil {
+			logger.Error("could not unmarshal timing data", "request", request, "err", err)
+			return err
+		}
+
 		_, err = models.Timings.Create(project, string(raw))
 		if err != nil {
 			return err
