@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"strings"
 	"sync"
 	"time"
 
@@ -19,16 +20,52 @@ func byName(name string) Plan {
 }
 
 func init() {
-	plans["default"] = Plan{RequestsPerMinute: 10, DataRetentionInDays: 7}
-	plans["small"] = Plan{RequestsPerMinute: 10, DataRetentionInDays: 7}
-	plans["medium"] = Plan{RequestsPerMinute: 20, DataRetentionInDays: 14}
-	plans["large"] = Plan{RequestsPerMinute: 30, DataRetentionInDays: 21}
+	plans["default"] = Plan{
+		Name:                     "default",
+		DataRetentionInDays:      7,
+		ProjectsLimit:            3,
+		PriceInCents:             2900,
+		RateLimit:                20,
+		RateLimitDurationSeconds: 60,
+	}
+	plans["small"] = Plan{
+		Name:                     "small",
+		DataRetentionInDays:      7,
+		ProjectsLimit:            3,
+		PriceInCents:             2900,
+		RateLimit:                20,
+		RateLimitDurationSeconds: 60,
+	}
+	plans["pro"] = Plan{
+		Name:                     "pro",
+		DataRetentionInDays:      14,
+		ProjectsLimit:            10,
+		PriceInCents:             8900,
+		RateLimit:                40,
+		RateLimitDurationSeconds: 60,
+	}
+	plans["enterprise"] = Plan{
+		Name:                     "enterprise",
+		DataRetentionInDays:      30,
+		ProjectsLimit:            50,
+		PriceInCents:             19900,
+		RateLimit:                120,
+		RateLimitDurationSeconds: 60,
+	}
 }
 
 type Plan struct {
-	AccountID           int64
-	DataRetentionInDays int
-	RequestsPerMinute   int
+	AccountID                int64
+	DataRetentionInDays      int
+	Name                     string
+	PriceInCents             int
+	RateLimitDurationSeconds int
+	RateLimit                int
+	ProjectsLimit            int
+}
+
+func (p Plan) RateLimitDuration() time.Duration {
+	return time.Duration(p.RateLimitDurationSeconds) * time.Second
 }
 
 type PlansStore interface {
@@ -43,14 +80,37 @@ type plansStore struct {
 	*Store
 }
 
-func (s *plansStore) FindByToken(token string) (*Plan, error) {
-	p := &Plan{RequestsPerMinute: 20, DataRetentionInDays: 7}
+var plansColumns = []string{
+	"account_id",
+	"data_retention_in_days",
+	"name",
+	"price_in_cents",
+	"rate_limit_duration_seconds",
+	"rate_limit",
+	"projects_limit",
+}
 
-	query := "select plans.* from plans join projects on projects.token = $1 and projects.account_id = plans.account_id limit 1;"
+func (s *plansStore) FindByToken(token string) (*Plan, error) {
+	p := &Plan{}
+
+	query := `select
+			plans.account_id,
+			plans.data_retention_in_days,
+			plans.name,
+			plans.price_in_cents,
+			plans.rate_limit_duration_seconds,
+			plans.rate_limit,
+			plans.projects_limit
+		from plans join projects on projects.token = $1 and projects.account_id = plans.account_id limit 1;`
+
 	err := s.QueryRow(query, token).Scan(
 		&p.AccountID,
 		&p.DataRetentionInDays,
-		&p.RequestsPerMinute,
+		&p.Name,
+		&p.PriceInCents,
+		&p.RateLimitDurationSeconds,
+		&p.RateLimit,
+		&p.ProjectsLimit,
 	)
 
 	if err == sql.ErrNoRows {
@@ -67,35 +127,49 @@ func (s *plansStore) FindByToken(token string) (*Plan, error) {
 
 func (s *plansStore) Create(account *Account, name string) (*Plan, error) {
 	model := byName(name)
+	model.AccountID = account.ID
 
-	plan := &Plan{
-		AccountID:           account.ID,
-		DataRetentionInDays: model.DataRetentionInDays,
-		RequestsPerMinute:   model.RequestsPerMinute,
-	}
+	query := "insert into plans("
+	query += strings.Join(plansColumns, ",")
+	query += ") values ($1,$2,$3,$4,$5,$6,$7);"
 
-	query := "insert into plans (account_id, data_retention_in_days, requests_per_minute) values ($1,$2,$3)"
 	_, err := s.Exec(query,
-		plan.AccountID,
-		plan.DataRetentionInDays,
-		plan.RequestsPerMinute,
+		model.AccountID,
+		model.DataRetentionInDays,
+		model.Name,
+		model.PriceInCents,
+		model.RateLimitDurationSeconds,
+		model.RateLimit,
+		model.ProjectsLimit,
 	)
 
 	if err != nil {
 		logger.Error("inserting plan", "err", err, "account", account.ID)
 	}
 
-	return plan, err
+	return &model, err
 }
 
 func (s *plansStore) Get(account *Account) (*Plan, error) {
 	p := new(Plan)
 
-	query := `select * from plans where account_id = $1 limit 1;`
+	query := `select
+			plans.account_id,
+			plans.data_retention_in_days,
+			plans.name,
+			plans.price_in_cents,
+			plans.rate_limit_duration_seconds,
+			plans.rate_limit,
+			plans.projects_limit
+		from plans where account_id = $1 limit 1;`
 	err := s.QueryRow(query, account.ID).Scan(
 		&p.AccountID,
 		&p.DataRetentionInDays,
-		&p.RequestsPerMinute,
+		&p.Name,
+		&p.PriceInCents,
+		&p.RateLimitDurationSeconds,
+		&p.RateLimit,
+		&p.ProjectsLimit,
 	)
 
 	if err == sql.ErrNoRows {
@@ -111,9 +185,25 @@ func (s *plansStore) Get(account *Account) (*Plan, error) {
 	return p, err
 }
 
-func (s *plansStore) Update(plan *Plan) error {
-	query := "update plans set data_retention_in_days=$1, requests_per_minute=$2 where account_id=$3"
-	_, err := s.Exec(query, plan.DataRetentionInDays, plan.RequestsPerMinute, plan.AccountID)
+func (s *plansStore) Update(p *Plan) error {
+	query := `update plans set
+		data_retention_in_days=$1,
+		name=$2,
+		price_in_cents=$3,
+		rate_limit_duration_seconds=$4,
+		rate_limit=$5,
+		projects_limit=$6
+	where account_id=$7`
+
+	_, err := s.Exec(query,
+		p.DataRetentionInDays,
+		p.Name,
+		p.PriceInCents,
+		p.RateLimitDurationSeconds,
+		p.RateLimit,
+		p.ProjectsLimit,
+		p.AccountID,
+	)
 	return err
 }
 

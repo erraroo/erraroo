@@ -14,7 +14,6 @@ import (
 )
 
 const (
-	rateLimitDuration             = 60 * time.Second
 	notificationRateLimitDuration = 30 * time.Minute
 	notificationRateLimitMax      = 1
 )
@@ -38,7 +37,7 @@ func EventsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error
 		return err
 	}
 
-	ok, err := Limiter.Check(token, rateLimitDuration, plan.RequestsPerMinute)
+	ok, err := Limiter.Check(token, plan.RateLimitDuration(), plan.RateLimit)
 	if err != nil {
 		logger.Error("Limiter.Check", "key", token, "err", err)
 		return err

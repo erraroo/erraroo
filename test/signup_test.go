@@ -27,7 +27,7 @@ func TestEmptySignup(t *testing.T) {
 }
 
 func TestDuplicateEmailSignup(t *testing.T) {
-	signupRequest := api.SignupRequest{Signup: api.Signup{_user.Email, "password", "large", ""}}
+	signupRequest := api.SignupRequest{Signup: api.Signup{_user.Email, "password", "pro", ""}}
 	req, res := rr("POST", "/api/v1/signups", signupRequest)
 
 	_app.ServeHTTP(res, req)
@@ -42,7 +42,7 @@ func TestDuplicateEmailSignup(t *testing.T) {
 
 func TestValidSignup(t *testing.T) {
 	email := uniqEmail()
-	signupRequest := api.SignupRequest{Signup: api.Signup{email, "password", "large", ""}}
+	signupRequest := api.SignupRequest{Signup: api.Signup{email, "password", "pro", ""}}
 	req, res := rr("POST", "/api/v1/signups", signupRequest)
 
 	_app.ServeHTTP(res, req)
@@ -60,6 +60,22 @@ func TestValidSignup(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, plan)
 	assert.Equal(t, user.AccountID, plan.AccountID)
-	assert.Equal(t, 21, plan.DataRetentionInDays)
-	assert.Equal(t, 30, plan.RequestsPerMinute)
+	assert.Equal(t, 14, plan.DataRetentionInDays)
+	assert.Equal(t, 40, plan.RateLimit)
+}
+
+func TestPlansUpdate(t *testing.T) {
+	account, err := models.Accounts.Create()
+	assert.Nil(t, err)
+
+	plan, err := models.Plans.Create(account, "enterprise")
+	assert.Nil(t, err)
+
+	plan.Name = "UPDATED"
+	err = models.Plans.Update(plan)
+	assert.Nil(t, err)
+
+	plan2, err := models.Plans.Get(account)
+	assert.Nil(t, err)
+	assert.Equal(t, plan.Name, plan2.Name)
 }
