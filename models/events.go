@@ -61,6 +61,11 @@ func (s *eventsStore) Insert(e *Event) error {
 		&e.CreatedAt,
 	)
 
+	if err != nil {
+		logger.Error("inserting event", "project", e.ProjectID, "err", err)
+		return err
+	}
+
 	return s.putPayload(e)
 }
 

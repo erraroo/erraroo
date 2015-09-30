@@ -7,8 +7,6 @@ import (
 	"gopkg.in/redis.v3"
 )
 
-var ()
-
 func Setup() (*redis.Client, error) {
 	var err error
 
