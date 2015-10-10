@@ -1,4 +1,4 @@
-package events
+package usecases
 
 import (
 	"encoding/json"
@@ -8,7 +8,7 @@ import (
 	"github.com/erraroo/erraroo/models"
 )
 
-type CreateEventRequest struct {
+type CollectEventRequest struct {
 	Client struct {
 		Name    string `json:"name"`
 		Version string `json:"version"`
@@ -19,7 +19,7 @@ type CreateEventRequest struct {
 	Session string                 `json:"session"`
 }
 
-func Ingest(token string, request CreateEventRequest) error {
+func CollectEvent(token string, request CollectEventRequest) error {
 	project, err := models.Projects.FindByToken(token)
 	if err != nil {
 		return err

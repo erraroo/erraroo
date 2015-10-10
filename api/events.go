@@ -8,7 +8,6 @@ import (
 	"github.com/erraroo/erraroo/cx"
 	"github.com/erraroo/erraroo/logger"
 	"github.com/erraroo/erraroo/models"
-	"github.com/erraroo/erraroo/models/events"
 	"github.com/erraroo/erraroo/serializers"
 	"github.com/erraroo/erraroo/usecases"
 )
@@ -48,14 +47,14 @@ func EventsCreate(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error
 		return tryNotify(token)
 	}
 
-	request := events.CreateEventRequest{}
+	request := usecases.CollectEventRequest{}
 	err = Decode(r, &request)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return nil
 	}
 
-	err = events.Ingest(token, request)
+	err = usecases.CollectEvent(token, request)
 	if err == models.ErrNotFound {
 		w.WriteHeader(http.StatusBadRequest)
 		return nil

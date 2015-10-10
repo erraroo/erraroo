@@ -11,8 +11,8 @@ import (
 	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/jobs"
 	"github.com/erraroo/erraroo/models"
-	"github.com/erraroo/erraroo/models/events"
 	"github.com/erraroo/erraroo/serializers"
+	"github.com/erraroo/erraroo/usecases"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,7 +30,7 @@ func TestCreateEvent(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, plan)
 
-	request := events.CreateEventRequest{
+	request := usecases.CollectEventRequest{
 		Kind: "js.error",
 		Data: map[string]interface{}{
 			"message": "error thrown",
