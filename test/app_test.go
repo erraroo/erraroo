@@ -40,7 +40,7 @@ func TestMain(m *testing.M) {
 
 	var err error
 
-	_account, err = models.Accounts.Create()
+	_account, err = models.CreateAccount()
 	if err != nil {
 		panic(err)
 	}

@@ -7,7 +7,7 @@ import (
 )
 
 func TestErrors(t *testing.T) {
-	account, err := Accounts.Create()
+	account, err := CreateAccount()
 	assert.Nil(t, err)
 
 	project, err := Projects.Create("Test Project", account.ID)
@@ -64,7 +64,7 @@ func TestErrors(t *testing.T) {
 }
 
 func TestErrorsAreOrderedCorrectly(t *testing.T) {
-	account, err := Accounts.Create()
+	account, err := CreateAccount()
 	assert.Nil(t, err)
 
 	project, err := Projects.Create("Test Project", account.ID)
@@ -100,7 +100,7 @@ func TestErrorsAreOrderedCorrectly(t *testing.T) {
 }
 
 func TestErrors_TouchCountsNumberOfOccurrences(t *testing.T) {
-	account, err := Accounts.Create()
+	account, err := CreateAccount()
 	assert.Nil(t, err)
 
 	project, err := Projects.Create("Test Project", account.ID)

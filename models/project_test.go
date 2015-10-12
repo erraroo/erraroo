@@ -7,10 +7,10 @@ import (
 )
 
 func TestProjectsByAccountID(t *testing.T) {
-	account1, err := Accounts.Create()
+	account1, err := CreateAccount()
 	assert.Nil(t, err)
 
-	account2, err := Accounts.Create()
+	account2, err := CreateAccount()
 	assert.Nil(t, err)
 
 	project1, err := Projects.Create("test project 1", account1.ID)

@@ -17,7 +17,7 @@ import (
 )
 
 func TestCreateAccount(t *testing.T) {
-	account, err := models.Accounts.Create()
+	account, err := models.CreateAccount()
 	assert.Nil(t, err)
 	assert.False(t, 0 == account.ID, "should not be 0")
 }
@@ -82,7 +82,7 @@ func TestEventShow(t *testing.T) {
 }
 
 func TestEventShowOnlyShowsEventsOwnedByUser(t *testing.T) {
-	account2, _ := models.Accounts.Create()
+	account2, _ := models.CreateAccount()
 	project, _ := models.Projects.Create("test project", account2.ID)
 	event := models.NewEvent(project, "js.error", "{}")
 	err := models.Events.Insert(event)

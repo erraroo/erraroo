@@ -15,7 +15,6 @@ func Setup() (*redis.Client, error) {
 		return nil, err
 	}
 
-	Accounts = &accountsStore{store}
 	Events = &eventsStore{store, s3.New(nil)}
 	Errors = &errorsStore{store}
 	Invitations = &invitationsStore{store}

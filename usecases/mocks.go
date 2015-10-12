@@ -45,7 +45,7 @@ func aup(t *testing.T) (*models.Account, *models.User, *models.Project) {
 }
 
 func account(t *testing.T) *models.Account {
-	account, err := models.Accounts.Create()
+	account, err := models.CreateAccount()
 	assert.Nil(t, err)
 	assert.NotNil(t, account)
 	return account

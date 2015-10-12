@@ -65,7 +65,7 @@ func TestValidSignup(t *testing.T) {
 }
 
 func TestPlansUpdate(t *testing.T) {
-	account, err := models.Accounts.Create()
+	account, err := models.CreateAccount()
 	assert.Nil(t, err)
 
 	plan, err := models.Plans.Create(account, "enterprise")

@@ -20,7 +20,6 @@ import (
 
 var (
 	store                 *Store
-	Accounts              AccountsStore
 	Events                EventsStore
 	Errors                ErrorsStore
 	Invitations           InvitationsStore

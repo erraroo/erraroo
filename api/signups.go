@@ -96,7 +96,7 @@ func accountForRequest(request *SignupRequest) (*models.Account, error) {
 		err := models.Invitations.Update(request.invitation)
 		return &models.Account{ID: request.invitation.AccountID}, err
 	} else {
-		account, err := models.Accounts.Create()
+		account, err := models.CreateAccount()
 		if err != nil {
 			return nil, err
 		}
