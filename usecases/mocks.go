@@ -7,6 +7,7 @@ import (
 
 	"github.com/erraroo/erraroo/models"
 	"github.com/stretchr/testify/assert"
+	"github.com/tuvistavie/securerandom"
 )
 
 type mockSender struct {
@@ -29,6 +30,11 @@ func (m *mockSender) Clear() {
 
 func uniqEmail() string {
 	return fmt.Sprintf("%d@example.com", time.Now().Nanosecond())
+}
+
+func uuid() string {
+	uuid, _ := securerandom.Uuid()
+	return uuid
 }
 
 func aup(t *testing.T) (*models.Account, *models.User, *models.Project) {
