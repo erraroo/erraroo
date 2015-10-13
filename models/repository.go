@@ -15,6 +15,21 @@ func InsertRepository(r *Repository) error {
 	return store.Save(r).Error
 }
 
+func FindRepositoryByID(id int64) (*Repository, error) {
+	r := &Repository{}
+
+	o := store.Where("id = ?", id).First(r)
+	if o.RecordNotFound() {
+		return nil, ErrNotFound
+	}
+
+	if o.Error != nil {
+		return nil, o.Error
+	}
+
+	return r, nil
+}
+
 func FindRepositoryByProjectID(projectID int64) (*Repository, error) {
 	r := &Repository{}
 

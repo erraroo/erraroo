@@ -102,6 +102,20 @@ func ProjectsDelete(w http.ResponseWriter, r *http.Request, ctx *cx.Context) err
 	return JSON(w, http.StatusOK, nil)
 }
 
+func ProjectsRepository(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
+	project, err := getAuthorizedProject(r, ctx)
+	if err != nil {
+		return err
+	}
+
+	repository, err := models.FindRepositoryByProjectID(project.ID)
+	if err != nil {
+		return err
+	}
+
+	return JSON(w, http.StatusOK, serializers.NewShowRepository(repository))
+}
+
 func ProjectsRegenerateToken(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	project, err := getAuthorizedProject(r, ctx)
 	if err != nil {
