@@ -5,8 +5,8 @@ import "fmt"
 type OutdatedRevision struct {
 	ID           int64
 	ProjectID    int64
-	SHA          string
-	Dependencies []Dependency `json:"dependencies"`
+	SHA          string `json:"Sha"`
+	Dependencies []Dependency
 }
 
 func (o *OutdatedRevision) Empty() bool {

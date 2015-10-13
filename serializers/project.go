@@ -27,16 +27,18 @@ type Projects struct {
 
 func NewProject(p *models.Project) Project {
 	links := ProjectLinks{
-		Libraries:  fmt.Sprintf("/api/v1/projects/%d/libraries", p.ID),
-		Repository: fmt.Sprintf("/api/v1/projects/%d/repository", p.ID),
+		Libraries:        fmt.Sprintf("/api/v1/projects/%d/libraries", p.ID),
+		Repository:       fmt.Sprintf("/api/v1/projects/%d/repository", p.ID),
+		OudatedRevisions: fmt.Sprintf("/api/v1/projects/%d/outdated-revisions", p.ID),
 	}
 
 	return Project{p, links}
 }
 
 type ProjectLinks struct {
-	Libraries  string `json:"libraries"`
-	Repository string `json:"repository"`
+	Libraries        string `json:"libraries"`
+	Repository       string `json:"repository"`
+	OudatedRevisions string `json:"outdatedRevisions"`
 }
 
 func NewProjects(ps []*models.Project) Projects {
