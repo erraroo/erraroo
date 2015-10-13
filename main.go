@@ -110,6 +110,27 @@ func main() {
 						}
 					},
 				},
+				{
+					Name:  "CheckEmberDependencies",
+					Usage: "check an ember project to make sure it is up to date",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "id",
+							Usage: "the project id that you want to check",
+						},
+					},
+					Action: func(c *cli.Context) {
+						id, err := api.StrToID(c.String("id"))
+						if err != nil {
+							logger.Fatal("could not parse id argument", "err", err)
+						}
+
+						err = usecases.CheckEmberDependencies(id, nil)
+						if err != nil {
+							logger.Fatal("could not complete job", "err", err)
+						}
+					},
+				},
 			},
 		},
 	}

@@ -66,6 +66,13 @@ func user(t *testing.T, account *models.Account) *models.User {
 	return user
 }
 
+func repository(t *testing.T, project *models.Project) *models.Repository {
+	repo := &models.Repository{ProjectID: project.ID}
+	err := models.InsertRepository(repo)
+	assert.Nil(t, err)
+	return repo
+}
+
 func makeEvent(t *testing.T, project *models.Project, payload string) *models.Event {
 	event := models.NewEvent(project, "js.error", payload)
 	err := models.Events.Insert(event)

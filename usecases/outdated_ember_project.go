@@ -21,6 +21,35 @@ type DependencyChecker interface {
 	Outdated(*models.Repository) (*models.OutdatedRevision, error)
 }
 
+func CheckEmberDependencies(projectID int64, checker DependencyChecker) error {
+	repository, err := models.FindRepositoryByProjectID(projectID)
+	if err == models.ErrNotFound {
+		return ErrNoRepo
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if checker == nil {
+		checker = &githubNodeDepencyChecker{}
+	}
+
+	outdated, err := checker.Outdated(repository)
+	if err != nil {
+		return err
+	}
+
+	if !outdated.Empty() {
+		err = models.InsertOutdatedRevision(outdated)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 type githubNodeDepencyChecker struct{}
 
 func (g githubNodeDepencyChecker) Outdated(r *models.Repository) (*models.OutdatedRevision, error) {
@@ -86,31 +115,6 @@ func (g githubNodeDepencyChecker) Outdated(r *models.Repository) (*models.Outdat
 	outdated.SHA = *branch.Commit.SHA
 	outdated.ProjectID = r.ProjectID
 	return outdated, nil
-}
-
-func OutdatedEmberProject(project *models.Project, checker DependencyChecker) error {
-	repository, err := models.FindRepositoryByProjectID(project.ID)
-	if err == models.ErrNotFound {
-		return ErrNoRepo
-	}
-
-	if err != nil {
-		return err
-	}
-
-	outdated, err := checker.Outdated(repository)
-	if err != nil {
-		return err
-	}
-
-	if !outdated.Empty() {
-		err = models.InsertOutdatedRevision(outdated)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func errarooNodeOutdated(path string) (*models.OutdatedRevision, error) {

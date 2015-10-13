@@ -45,7 +45,14 @@ func FindOutdatedRevisionsByProjectID(projectID int64) ([]*OutdatedRevision, err
 }
 
 func InsertOutdatedRevision(outdated *OutdatedRevision) error {
-	query := "insert into outdated_revisions (project_id, sha, dependencies) values($1,$2,$3) returning id"
+	query := `WITH
+	updated AS (
+		update outdated_revisions set dependencies=$3, updated_at=now_utc() where project_id=$1 and sha=$2 RETURNING *
+	),
+	inserted AS (
+		INSERT INTO outdated_revisions (project_id, sha, dependencies) SELECT $1,$2,$3 WHERE NOT EXISTS (SELECT 1 FROM updated WHERE project_id = $1 AND sha = $2) RETURNING *
+	)
+	SELECT id FROM inserted UNION ALL SELECT id from updated;`
 
 	dependencies, err := json.Marshal(outdated.Dependencies)
 	if err != nil {
