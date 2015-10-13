@@ -5,6 +5,8 @@ import "github.com/spf13/viper"
 var (
 	Bucket               string
 	Env                  string
+	GithubClientID       string
+	GithubClientSecret   string
 	LogSql               bool
 	MigrationsPath       string
 	Port                 int
@@ -16,7 +18,8 @@ var (
 	QueueWorkers         int
 	SendGridKey          string
 	SendGridUser         string
-	MailerBaseURL        string
+	ApiBaseURL           string
+	AppBaseURL           string
 	TokenSigningKey      []byte
 )
 
@@ -57,5 +60,10 @@ func init() {
 	// Email
 	SendGridKey = viper.GetString("SendGridKey")
 	SendGridUser = viper.GetString("SendGridUser")
-	MailerBaseURL = viper.GetString("MailerBaseURL")
+	AppBaseURL = viper.GetString("AppBaseURL")
+	ApiBaseURL = viper.GetString("ApiBaseURL")
+
+	// Github Integration
+	GithubClientID = viper.GetString("GithubClientID")
+	GithubClientSecret = viper.GetString("GithubClientSecret")
 }

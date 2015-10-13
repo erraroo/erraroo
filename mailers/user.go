@@ -25,7 +25,7 @@ func newErrorEmailView(g *models.Error) groupEmailView {
 	return groupEmailView{
 		Subject: fmt.Sprintf("[erraroo] %s", g.Message),
 		Message: g.Message,
-		URL:     fmt.Sprintf("%s/projects/%d/errors/%d/events/latest", config.MailerBaseURL, g.ProjectID, g.ID),
+		URL:     fmt.Sprintf("%s/projects/%d/errors/%d/events/latest", config.AppBaseURL, g.ProjectID, g.ID),
 	}
 }
 
@@ -83,7 +83,7 @@ func DeliverInvitation(invitation *models.Invitation) error {
 
 	view := invitationView{
 		From:    user,
-		URL:     fmt.Sprintf("%s/invitation/%s", config.MailerBaseURL, invitation.Token),
+		URL:     fmt.Sprintf("%s/invitation/%s", config.AppBaseURL, invitation.Token),
 		Subject: "[erraroo] Invitation!",
 	}
 
@@ -126,7 +126,7 @@ func DeliverPasswordRecover(pr *models.PasswordRecover) error {
 	}
 
 	view := passwordRecoverView{
-		URL:     fmt.Sprintf("%s/recover-password/%s", config.MailerBaseURL, pr.Token),
+		URL:     fmt.Sprintf("%s/recover-password/%s", config.AppBaseURL, pr.Token),
 		Subject: "[erraroo] Password Recovery",
 	}
 

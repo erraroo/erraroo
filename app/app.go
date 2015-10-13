@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"golang.org/x/oauth2"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/config"
@@ -87,6 +89,9 @@ func (a *App) setupMux() {
 	a.Router.Handle("/api/v1/timings", a.AuthroziedHandler(api.TimingsIndex)).Methods("GET")
 	a.Router.Handle("/api/v1/backlog", a.AuthroziedHandler(api.Backlog)).Methods("POST")
 	a.Router.HandleFunc("/healthcheck", api.Healthcheck).Methods("GET")
+
+	a.Router.HandleFunc("/api/v1/github/connect", startGithub)
+	a.Router.HandleFunc("/api/v1/github/callback", callbackGithub)
 }
 
 func (a *App) setupQueue() {
@@ -228,6 +233,79 @@ func (a *App) Handler(fn AppHandler) http.Handler {
 			handleError(err, w)
 		}
 	})
+}
+
+func startGithub(w http.ResponseWriter, r *http.Request) {
+	conf := &oauth2.Config{
+		ClientID:     config.GithubClientID,
+		ClientSecret: config.GithubClientSecret,
+		Scopes:       []string{"user:read", "repo"},
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  "https://github.com/login/oauth/authorize",
+			TokenURL: "https://github.com/login/oauth/access_token",
+		},
+	}
+
+	// XXX - need to authorize access
+	projectID := r.URL.Query().Get("project_id")
+	conf.RedirectURL = config.ApiBaseURL + "/api/v1/github/callback?project_id=" + projectID
+
+	url := conf.AuthCodeURL("state", oauth2.AccessTypeOnline)
+	http.Redirect(w, r, url, 302)
+}
+
+func callbackGithub(w http.ResponseWriter, r *http.Request) {
+	conf := &oauth2.Config{
+		ClientID:     config.GithubClientID,
+		ClientSecret: config.GithubClientSecret,
+		Scopes:       []string{"user:read", "repo"},
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  "https://github.com/login/oauth/authorize",
+			TokenURL: "https://github.com/login/oauth/access_token",
+		},
+	}
+
+	// XXX - need to authorize access
+	projectID, err := api.StrToID(r.URL.Query().Get("project_id"))
+	if err != nil {
+		logger.Error("github callback did not contain project_id")
+		return
+	}
+
+	code := r.URL.Query().Get("code")
+	tok, err := conf.Exchange(oauth2.NoContext, code)
+	if err != nil {
+		logger.Error("could not exhange code for token", "err", err)
+		return
+	}
+
+	repository, err := models.FindRepositoryByProjectID(projectID)
+	if err == models.ErrNotFound {
+		repository = &models.Repository{
+			ProjectID: projectID,
+			Provider:  "github",
+		}
+	} else if err != nil {
+		logger.Error("could not find repository", "err", err)
+		return
+	}
+
+	// XXX - temp until we add ui
+	repository.GithubOrg = "erraroo"
+	repository.GithubRepo = "erraroo-app"
+
+	repository.GithubScope = "user:read,repo"
+	repository.GithubToken = tok.AccessToken
+	repository.GithubTokenType = tok.TokenType
+
+	err = models.InsertRepository(repository)
+	if err != nil {
+		logger.Error("could not insert repository", "err", err)
+		return
+	}
+
+	url := fmt.Sprintf("%s/projects/%d/config", config.AppBaseURL, projectID)
+	http.Redirect(w, r, url, 302)
 }
 
 func (a *App) AuthroziedHandler(fn AppHandler) http.Handler {
