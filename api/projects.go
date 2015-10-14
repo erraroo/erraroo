@@ -1,8 +1,11 @@
 package api
 
 import (
+	"log"
 	"net/http"
 
+	"github.com/dgrijalva/jwt-go"
+	"github.com/erraroo/erraroo/config"
 	"github.com/erraroo/erraroo/cx"
 	"github.com/erraroo/erraroo/models"
 	"github.com/erraroo/erraroo/serializers"
@@ -151,6 +154,45 @@ func ProjectsRegenerateToken(w http.ResponseWriter, r *http.Request, ctx *cx.Con
 	}
 
 	return JSON(w, http.StatusOK, serializers.NewShowProject(project))
+}
+
+type SignedProjectTokenRequest struct {
+	SignedProjectToken struct {
+		ProjectID string
+		Token     string
+	} `json:"Signed-project-token"`
+}
+
+func SignedProjectTokens(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
+	request := SignedProjectTokenRequest{}
+	Decode(r, &request)
+
+	log.Println(request)
+
+	id, err := StrToID(request.SignedProjectToken.ProjectID)
+	if err != nil {
+		return err
+	}
+
+	project, err := models.Projects.FindByID(id)
+	if err != nil {
+		return err
+	}
+
+	if !ctx.User.CanSee(project) {
+		return models.ErrNotFound
+	}
+
+	token := jwt.New(jwt.SigningMethodHS256)
+	token.Claims["project_id"] = project.ID
+	tokenString, err := token.SignedString(config.TokenSigningKey)
+	if err != nil {
+		return err
+	}
+
+	request.SignedProjectToken.Token = tokenString
+
+	return JSON(w, http.StatusCreated, request)
 }
 
 func getAuthorizedProject(r *http.Request, ctx *cx.Context) (*models.Project, error) {

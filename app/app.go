@@ -73,7 +73,9 @@ func (a *App) setupMux() {
 	a.Router.Handle("/api/v1/projects/{id}/regenerate-token", a.AuthroziedHandler(api.ProjectsRegenerateToken)).Methods("POST")
 	a.Router.Handle("/api/v1/projects/{id}/repository", a.AuthroziedHandler(api.ProjectsRepository)).Methods("GET")
 	a.Router.Handle("/api/v1/projects/{id}/outdated-revisions", a.AuthroziedHandler(api.ProjectsOutdatedRevisions)).Methods("GET")
+	a.Router.Handle("/api/v1/signedProjectTokens", a.AuthroziedHandler(api.SignedProjectTokens)).Methods("POST")
 	a.Router.Handle("/api/v1/repositories/{id}", a.AuthroziedHandler(api.RepositoriesUpdate)).Methods("PUT")
+	a.Router.Handle("/api/v1/repositories/{id}", a.AuthroziedHandler(api.RepositoriesDelete)).Methods("DELETE")
 	a.Router.Handle("/api/v1/events/{id}", a.AuthroziedHandler(api.EventsShow)).Methods("GET")
 	a.Router.Handle("/api/v1/events", a.AuthroziedHandler(api.EventsIndex)).Methods("GET")
 	a.Router.Handle("/api/v1/errors", a.AuthroziedHandler(api.ErrorsIndex)).Methods("GET")
@@ -174,6 +176,28 @@ func (a *App) newContext(r *http.Request) (*cx.Context, error) {
 	return ctx, err
 }
 
+func getValidProjectIDFromToken(r *http.Request) (int64, error) {
+	authorization := r.URL.Query().Get("token")
+	if authorization == "" {
+		return 0, errors.New("no project token present")
+	}
+
+	token, err := jwt.Parse(authorization, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return 0, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+
+		return config.TokenSigningKey, nil
+	})
+
+	if err != nil {
+		return 0, ErrInvalidToken
+	}
+
+	id := token.Claims["project_id"].(float64)
+	return int64(id), nil
+}
+
 func getCurrentUserID(r *http.Request) (int64, error) {
 	authorization := r.Header.Get("Authorization")
 	if authorization == "" {
@@ -249,10 +273,8 @@ func startGithub(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	// XXX - need to authorize access
-	projectID := r.URL.Query().Get("project_id")
-	conf.RedirectURL = config.ApiBaseURL + "/api/v1/github/callback?project_id=" + projectID
-
+	token := r.URL.Query().Get("token")
+	conf.RedirectURL = config.ApiBaseURL + "/api/v1/github/callback?token=" + token
 	url := conf.AuthCodeURL("state", oauth2.AccessTypeOnline)
 	http.Redirect(w, r, url, 302)
 }
@@ -268,8 +290,7 @@ func callbackGithub(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	// XXX - need to authorize access
-	projectID, err := api.StrToID(r.URL.Query().Get("project_id"))
+	projectID, err := getValidProjectIDFromToken(r)
 	if err != nil {
 		logger.Error("github callback did not contain project_id")
 		return
@@ -293,11 +314,7 @@ func callbackGithub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// XXX - temp until we add ui
-	repository.GithubOrg = "erraroo"
-	repository.GithubRepo = "erraroo-app"
-
-	repository.GithubScope = "user:read,repo"
+	repository.GithubScope = "repo"
 	repository.GithubToken = tok.AccessToken
 	repository.GithubTokenType = tok.TokenType
 

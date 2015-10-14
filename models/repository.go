@@ -45,6 +45,10 @@ func FindRepositoryByProjectID(projectID int64) (*Repository, error) {
 	return r, nil
 }
 
+func DeleteRepository(repository *Repository) error {
+	return store.Delete(repository).Error
+}
+
 func FindRepositoryByGithubOrgAndGithubRepo(org string, repo string) (*Repository, error) {
 	// webhooks come in with these two pieces of information we need to resolve
 	return nil, nil
