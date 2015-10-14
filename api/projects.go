@@ -160,7 +160,7 @@ type SignedProjectTokenRequest struct {
 	SignedProjectToken struct {
 		ProjectID string
 		Token     string
-	} `json:"Signed-project-token"`
+	}
 }
 
 func SignedProjectTokens(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {

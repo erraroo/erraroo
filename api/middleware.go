@@ -46,6 +46,7 @@ func GzipMiddleware(handler http.Handler) http.Handler {
 			return
 		}
 
+		w.Header().Set("Content-Type", "text/html")
 		w.Header().Set("Content-Encoding", "gzip")
 		gz := gzip.NewWriter(w)
 		defer gz.Close()

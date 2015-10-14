@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"golang.org/x/oauth2"
-
 	"github.com/dgrijalva/jwt-go"
 	"github.com/erraroo/erraroo/api"
 	"github.com/erraroo/erraroo/config"
@@ -93,10 +91,9 @@ func (a *App) setupMux() {
 	a.Router.Handle("/api/v1/passwordRecovers/{token}", a.Handler(api.PasswordRecoversShow)).Methods("GET")
 	a.Router.Handle("/api/v1/timings", a.AuthroziedHandler(api.TimingsIndex)).Methods("GET")
 	a.Router.Handle("/api/v1/backlog", a.AuthroziedHandler(api.Backlog)).Methods("POST")
+	a.Router.HandleFunc("/api/v1/github/connect", api.GithubConnect)
+	a.Router.HandleFunc("/api/v1/github/callback", api.GithubCallback)
 	a.Router.HandleFunc("/healthcheck", api.Healthcheck).Methods("GET")
-
-	a.Router.HandleFunc("/api/v1/github/connect", startGithub)
-	a.Router.HandleFunc("/api/v1/github/callback", callbackGithub)
 }
 
 func (a *App) setupQueue() {
@@ -176,28 +173,6 @@ func (a *App) newContext(r *http.Request) (*cx.Context, error) {
 	return ctx, err
 }
 
-func getValidProjectIDFromToken(r *http.Request) (int64, error) {
-	authorization := r.URL.Query().Get("token")
-	if authorization == "" {
-		return 0, errors.New("no project token present")
-	}
-
-	token, err := jwt.Parse(authorization, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return 0, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
-		}
-
-		return config.TokenSigningKey, nil
-	})
-
-	if err != nil {
-		return 0, ErrInvalidToken
-	}
-
-	id := token.Claims["project_id"].(float64)
-	return int64(id), nil
-}
-
 func getCurrentUserID(r *http.Request) (int64, error) {
 	authorization := r.Header.Get("Authorization")
 	if authorization == "" {
@@ -262,72 +237,6 @@ func (a *App) Handler(fn AppHandler) http.Handler {
 	})
 }
 
-func startGithub(w http.ResponseWriter, r *http.Request) {
-	conf := &oauth2.Config{
-		ClientID:     config.GithubClientID,
-		ClientSecret: config.GithubClientSecret,
-		Scopes:       []string{"user:read", "repo"},
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  "https://github.com/login/oauth/authorize",
-			TokenURL: "https://github.com/login/oauth/access_token",
-		},
-	}
-
-	token := r.URL.Query().Get("token")
-	conf.RedirectURL = config.ApiBaseURL + "/api/v1/github/callback?token=" + token
-	url := conf.AuthCodeURL("state", oauth2.AccessTypeOnline)
-	http.Redirect(w, r, url, 302)
-}
-
-func callbackGithub(w http.ResponseWriter, r *http.Request) {
-	conf := &oauth2.Config{
-		ClientID:     config.GithubClientID,
-		ClientSecret: config.GithubClientSecret,
-		Scopes:       []string{"user:read", "repo"},
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  "https://github.com/login/oauth/authorize",
-			TokenURL: "https://github.com/login/oauth/access_token",
-		},
-	}
-
-	projectID, err := getValidProjectIDFromToken(r)
-	if err != nil {
-		logger.Error("github callback did not contain project_id")
-		return
-	}
-
-	code := r.URL.Query().Get("code")
-	tok, err := conf.Exchange(oauth2.NoContext, code)
-	if err != nil {
-		logger.Error("could not exhange code for token", "err", err)
-		return
-	}
-
-	repository, err := models.FindRepositoryByProjectID(projectID)
-	if err == models.ErrNotFound {
-		repository = &models.Repository{
-			ProjectID: projectID,
-			Provider:  "github",
-		}
-	} else if err != nil {
-		logger.Error("could not find repository", "err", err)
-		return
-	}
-
-	repository.GithubScope = "repo"
-	repository.GithubToken = tok.AccessToken
-	repository.GithubTokenType = tok.TokenType
-
-	err = models.InsertRepository(repository)
-	if err != nil {
-		logger.Error("could not insert repository", "err", err)
-		return
-	}
-
-	url := fmt.Sprintf("%s/projects/%d/config", config.AppBaseURL, projectID)
-	http.Redirect(w, r, url, 302)
-}
-
 func (a *App) AuthroziedHandler(fn AppHandler) http.Handler {
 	return a.Handler(func(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 		if ctx.User == nil {
@@ -353,7 +262,6 @@ func (a *App) JobHandler(fn AppJobHandler) rsq.JobHandlerFunc {
 		if err != nil {
 			logger.Error(err.Error(), "name", job.Name, "payload", fmt.Sprintf("%s", job.Payload), "runtime", time.Since(start))
 		} else {
-			//logger.Info("ran", "name", job.Name, "payload", fmt.Sprintf("%s", job.Payload), "runtime", time.Since(start))
 			logger.Info("ran", "name", job.Name, "runtime", time.Since(start))
 		}
 
