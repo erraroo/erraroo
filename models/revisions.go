@@ -35,7 +35,7 @@ func (d Dependency) String() string {
 func FindRevisionsByProjectID(projectID int64) ([]*Revision, error) {
 	revisions := []*Revision{}
 
-	query := "select id, sha, dependencies from revisions where project_id = $1"
+	query := "select id, sha, dependencies, created_at, updated_at from revisions where project_id = $1 order by updated_at desc limit 10"
 	rows, err := store.Query(query, projectID)
 	if err != nil {
 		logger.Error("query", "project", projectID, "err", err)
@@ -53,6 +53,8 @@ func FindRevisionsByProjectID(projectID int64) ([]*Revision, error) {
 			&revision.ID,
 			&revision.SHA,
 			&payload,
+			&revision.CreatedAt,
+			&revision.UpdatedAt,
 		)
 
 		if err != nil {
