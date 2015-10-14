@@ -20,6 +20,7 @@ var (
 	SendGridUser         string
 	ApiBaseURL           string
 	AppBaseURL           string
+	CronToken            string
 	TokenSigningKey      []byte
 )
 
@@ -66,4 +67,6 @@ func init() {
 	// Github Integration
 	GithubClientID = viper.GetString("GithubClientID")
 	GithubClientSecret = viper.GetString("GithubClientSecret")
+
+	CronToken = viper.GetString("CronToken")
 }

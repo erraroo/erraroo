@@ -93,6 +93,7 @@ func (a *App) setupMux() {
 	a.Router.Handle("/api/v1/backlog", a.AuthroziedHandler(api.Backlog)).Methods("POST")
 	a.Router.HandleFunc("/api/v1/github/connect", api.GithubConnect)
 	a.Router.HandleFunc("/api/v1/github/callback", api.GithubCallback)
+	a.Router.HandleFunc("/api/v1/cron/{token}", api.Cron)
 	a.Router.HandleFunc("/healthcheck", api.Healthcheck).Methods("GET")
 }
 
@@ -142,6 +143,13 @@ func (a *App) setupQueue() {
 		return usecases.AfterErrorEventCreated(e)
 	}))
 
+	// TODO
+	// - clean up data that is expired
+	// - check repositories for outdated dependncies
+	a.JobRouter.Handle("cron", a.JobHandler(func(job *rsq.Job, c *cx.Context) error {
+		logger.Info("cron job running", "t", string(job.Payload))
+		return nil
+	}))
 }
 
 func (a *App) newContext(r *http.Request) (*cx.Context, error) {
