@@ -19,8 +19,8 @@ func TestCheckEmberDependencies_ThatDoesNotHaveARepositoriesitory(t *testing.T) 
 
 type mockChecker struct{}
 
-func (mock *mockChecker) Outdated(r *models.Repository) (*models.OutdatedRevision, error) {
-	revision := &models.OutdatedRevision{
+func (mock *mockChecker) Outdated(r *models.Repository) (*models.Revision, error) {
+	revision := &models.Revision{
 		ProjectID: r.ProjectID,
 		Dependencies: []models.Dependency{
 			models.Dependency{},
@@ -39,8 +39,16 @@ func TestCheckEmberDependencies_ThatDoesHasRepositoriesitory(t *testing.T) {
 	err := CheckEmberDependencies(project.ID, checker)
 	assert.Nil(t, err)
 
-	revisions, err := models.FindOutdatedRevisionsByProjectID(project.ID)
+	revisions, err := models.FindRevisionsByProjectID(project.ID)
 	assert.Nil(t, err)
 	assert.Len(t, revisions, 1)
 	assert.Len(t, revisions[0].Dependencies, 1)
+
+	// Ensure it only inserts one per sha
+	err = CheckEmberDependencies(project.ID, checker)
+	assert.Nil(t, err)
+
+	revisions, err = models.FindRevisionsByProjectID(project.ID)
+	assert.Nil(t, err)
+	assert.Len(t, revisions, 1)
 }

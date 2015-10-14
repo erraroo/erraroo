@@ -72,7 +72,7 @@ func Cron(job *rsq.Job) error {
 	return nil
 }
 
-func enqueueDependencyChecking() err {
+func enqueueDependencyChecking() error {
 	repositories, err := models.AllRepositories()
 	if err != nil {
 		return err

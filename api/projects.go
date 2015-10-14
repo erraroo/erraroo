@@ -119,19 +119,19 @@ func ProjectsRepository(w http.ResponseWriter, r *http.Request, ctx *cx.Context)
 	return JSON(w, http.StatusOK, serializers.NewShowRepository(repository))
 }
 
-func ProjectsOutdatedRevisions(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
+func ProjectsRevisions(w http.ResponseWriter, r *http.Request, ctx *cx.Context) error {
 	project, err := getAuthorizedProject(r, ctx)
 	if err != nil {
 		return err
 	}
 
-	revisions, err := models.FindOutdatedRevisionsByProjectID(project.ID)
+	revisions, err := models.FindRevisionsByProjectID(project.ID)
 	if err != nil {
 		return err
 	}
 
 	return JSON(w, http.StatusOK, map[string]interface{}{
-		"OutdatedRevisions": revisions,
+		"Revisions": revisions,
 	})
 }
 

@@ -18,7 +18,7 @@ import (
 var ErrNoRepo = errors.New("no repository")
 
 type DependencyChecker interface {
-	Outdated(*models.Repository) (*models.OutdatedRevision, error)
+	Outdated(*models.Repository) (*models.Revision, error)
 }
 
 func CheckEmberDependencies(projectID int64, checker DependencyChecker) error {
@@ -35,16 +35,14 @@ func CheckEmberDependencies(projectID int64, checker DependencyChecker) error {
 		checker = &githubNodeDepencyChecker{}
 	}
 
-	outdated, err := checker.Outdated(repository)
+	revision, err := checker.Outdated(repository)
 	if err != nil {
 		return err
 	}
 
-	if !outdated.Empty() {
-		err = models.InsertOutdatedRevision(outdated)
-		if err != nil {
-			return err
-		}
+	err = models.SaveRevision(revision)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -52,9 +50,7 @@ func CheckEmberDependencies(projectID int64, checker DependencyChecker) error {
 
 type githubNodeDepencyChecker struct{}
 
-func (g githubNodeDepencyChecker) Outdated(r *models.Repository) (*models.OutdatedRevision, error) {
-	// possibly need to pass the project in here to figure out
-	// which DependencyChecker to use, so far it's just node and github
+func (g githubNodeDepencyChecker) Outdated(r *models.Repository) (*models.Revision, error) {
 	root := "/tmp/" + uuid() + "/"
 	os.MkdirAll(root, 0766)
 	defer os.RemoveAll(root)
@@ -83,7 +79,7 @@ func (g githubNodeDepencyChecker) Outdated(r *models.Repository) (*models.Outdat
 		return nil, err
 	}
 
-	packagejson, _, _, err := client.Repositories.GetContents("erraroo", "erraroo-app", "package.json", nil)
+	packagejson, _, _, err := client.Repositories.GetContents(r.GithubOrg, r.GithubRepo, "package.json", nil)
 	if err != nil {
 		logger.Error("could not get package.json", "err", err)
 		return nil, err
@@ -117,7 +113,7 @@ func (g githubNodeDepencyChecker) Outdated(r *models.Repository) (*models.Outdat
 	return outdated, nil
 }
 
-func errarooNodeOutdated(path string) (*models.OutdatedRevision, error) {
+func errarooNodeOutdated(path string) (*models.Revision, error) {
 	cmd := "erraroo-node-outdated"
 
 	c := exec.Command(cmd)
@@ -133,7 +129,7 @@ func errarooNodeOutdated(path string) (*models.OutdatedRevision, error) {
 		return nil, err
 	}
 
-	outdated := &models.OutdatedRevision{}
+	outdated := &models.Revision{}
 	err = json.Unmarshal(out.Bytes(), outdated)
 	if err != nil {
 		logger.Error("could not unmarhsal erraroo-node-oudated", "stdout", string(out.Bytes()), "stderr", string(errs.Bytes()), "path", path, "err", err)
