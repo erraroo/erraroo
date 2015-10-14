@@ -1,7 +1,6 @@
 package app
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -14,7 +13,7 @@ import (
 	"github.com/erraroo/erraroo/jobs"
 	"github.com/erraroo/erraroo/logger"
 	"github.com/erraroo/erraroo/models"
-	"github.com/erraroo/erraroo/usecases"
+	"github.com/erraroo/erraroo/workers"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
 	"github.com/nerdyworm/rsq"
@@ -99,57 +98,14 @@ func (a *App) setupMux() {
 
 func (a *App) setupQueue() {
 	a.JobRouter = rsq.NewJobRouter()
+	a.JobRouter.Handle("create.js.error", a.JobHandler(workers.CreateJsError))
+	a.JobRouter.Handle("invitation.deliver", a.JobHandler(workers.InvitationDeliver))
+	a.JobRouter.Handle("cron", a.JobHandler(workers.Cron))
+	a.JobRouter.Handle("CheckEmberDependencies", a.JobHandler(workers.CheckEmberDependencies))
 	a.JobRouter.NotFoundHandler = func(job *rsq.Job) error {
 		logger.Error("no job handler", "name", job.Name, "payload", fmt.Sprintf("%s", job.Payload))
 		return errors.New("no job handler")
 	}
-
-	a.JobRouter.Handle("invitation.deliver", a.JobHandler(func(job *rsq.Job, c *cx.Context) error {
-		var token string
-		err := json.Unmarshal(job.Payload, &token)
-		if err != nil {
-			return err
-		}
-
-		return usecases.InvitationDeliver(token)
-	}))
-
-	a.JobRouter.Handle("create.js.error", a.JobHandler(func(job *rsq.Job, c *cx.Context) error {
-		payload := map[string]interface{}{}
-		err := json.Unmarshal(job.Payload, &payload)
-		if err != nil {
-			return err
-		}
-
-		id := int64(payload["projectID"].(float64))
-		project, err := models.Projects.FindByID(id)
-		if err != nil {
-			return err
-		}
-
-		raw, err := json.Marshal(payload["data"])
-		if err != nil {
-			logger.Error("marshalling payload", "payload", payload)
-			return err
-		}
-
-		e := models.NewEvent(project, "js.error", string(raw))
-		err = models.Events.Insert(e)
-		if err != nil {
-			logger.Error("inserting event", "err", err)
-			return err
-		}
-
-		return usecases.AfterErrorEventCreated(e)
-	}))
-
-	// TODO
-	// - clean up data that is expired
-	// - check repositories for outdated dependncies
-	a.JobRouter.Handle("cron", a.JobHandler(func(job *rsq.Job, c *cx.Context) error {
-		logger.Info("cron job running", "t", string(job.Payload))
-		return nil
-	}))
 }
 
 func (a *App) newContext(r *http.Request) (*cx.Context, error) {
@@ -255,18 +211,13 @@ func (a *App) AuthroziedHandler(fn AppHandler) http.Handler {
 	})
 }
 
-type AppJobHandler func(*rsq.Job, *cx.Context) error
+type AppJobHandler func(*rsq.Job) error
 
 func (a *App) JobHandler(fn AppJobHandler) rsq.JobHandlerFunc {
 	return func(job *rsq.Job) error {
 		start := time.Now()
 
-		ctx, err := a.newContext(nil)
-		if err != nil {
-			return err
-		}
-
-		err = fn(job, ctx)
+		err := fn(job)
 		if err != nil {
 			logger.Error(err.Error(), "name", job.Name, "payload", fmt.Sprintf("%s", job.Payload), "runtime", time.Since(start))
 		} else {

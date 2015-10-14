@@ -191,9 +191,9 @@ const rateLimitNotifcationTemplate = `
 	<head>
 	</head>
 	<body>
-		<p>Hello New Friend!</p>
+		<p>Hello Friend!</p>
 		<p>Your project {{.ProjectName}} has execeeded it's rate limit.</p>
-		<p>I hope your app is ok friend :(</p>
+		<p>I hope your app is ok :(</p>
 	</body>
 </html>
 {{end}}

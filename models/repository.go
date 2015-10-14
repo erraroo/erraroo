@@ -11,8 +11,17 @@ type Repository struct {
 	GithubTokenType string
 }
 
+func (r Repository) GithubOK() bool {
+	return r.Provider == "github" && r.GithubToken != "" && r.GithubOrg != "" && r.GithubRepo != ""
+}
+
 func InsertRepository(r *Repository) error {
 	return store.Save(r).Error
+}
+
+func AllRepositories() ([]*Repository, error) {
+	repositories := []*Repository{}
+	return repositories, store.Find(&repositories).Error
 }
 
 func FindRepositoryByID(id int64) (*Repository, error) {
