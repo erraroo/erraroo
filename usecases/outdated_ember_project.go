@@ -97,7 +97,7 @@ func (g githubNodeDepencyChecker) Outdated(r *models.Repository) (*models.Revisi
 		return nil, err
 	}
 
-	branch, _, err := client.Repositories.GetBranch("erraroo", "erraroo-app", "master")
+	branch, _, err := client.Repositories.GetBranch(r.GithubOrg, r.GithubRepo, "master")
 	if err != nil {
 		logger.Error("could not get branch", "err", err, "repository", r)
 		return nil, err
